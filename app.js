@@ -12,11 +12,11 @@ fs.readdirSync(__dirname+"/models").forEach(function(file){
   require("./models/"+file);
 })
 //require all routers
-var authRouter = require("./controllers/auth");
-var userRouter = require("./controllers/user");
+//var authRouter = require("./controllers/auth");
+//var userRouter = require("./controllers/user");
 var groupRouter = require("./controllers/group");
-var orderRouter = require("./controllers/order");
-var notificationRouter = require("./controllers/notification");
+//var orderRouter = require("./controllers/order");
+//var notificationRouter = require("./controllers/notification");
 
 server.use(function(request,response,next){
   response.setHeader("Access-Control-Allow-Origin","*");
@@ -26,11 +26,11 @@ server.use(function(request,response,next){
 })
 
 //use routers
-server.use("/auth",authRouter);
-server.use("/user",userRouter);
+//server.use("/auth",authRouter);
+//server.use("/user",userRouter);
 server.use("/group",groupRouter);
-server.use("/order",orderRouter);
-server.use("/notification",notificationRouter);
+//server.use("/order",orderRouter);
+//server.use("/notification",notificationRouter);
 
 //************example of populate "find" result*********************
 // server.get("/",function(request,response){
