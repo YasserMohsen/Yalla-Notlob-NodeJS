@@ -13,7 +13,7 @@ fs.readdirSync(__dirname+"/models").forEach(function(file){
 })
 //require all routers
 //var authRouter = require("./controllers/auth");
-//var userRouter = require("./controllers/user");
+// var userRouter = require("./controllers/user");
 var groupRouter = require("./controllers/group");
 //var orderRouter = require("./controllers/order");
 //var notificationRouter = require("./controllers/notification");

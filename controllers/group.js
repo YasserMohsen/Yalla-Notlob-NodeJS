@@ -6,41 +6,47 @@ var postMiddleware=bodyParser.urlencoded({extended:false});
 var router=express.Router();
 
 router.get("/",function(request,response){
-  mongoose.model("groups").find({},{},function(err,groups){
-    if(!err)
+    mongoose.model("groups").find({owner_id:request.user_id},{},function(err,ownedgroups){
+    if(err)
     {
-      console.log(groups);
-      response.json(groups);
+      console.log(ownedgroups);
+      response.json({status:false,error:err});
     }
     else {
-        response.json({error:err});
+      mongoose.model("groups").find({members:request.user_id},{},function(err,joinedgroups){
+        if(!err)
+        {
+          console.log(joinedgroups);
+          response.json({status:true,ownedGroups:ownedgroups,joinedGroups:joinedgroups});
+        }
+        else {
+          response.json({status:false});
+        }
+      });
     }
-  })
+  });
 });
 
 router.post("/",postMiddleware,function(request,response){
-  // valida access token
-  //var array = request.body.members.split(',');
-  if(request.body.group_name && request.body.owner && request.body.members && isArray(request.body.members))
+  if(request.body.group_name && request.body.members && isArray(request.body.members))
   {
     var UserModel=mongoose.model("groups");
-    var group=new UserModel({name:request.body.group_name,owner_id:request.body.owner,members:request.body.members});
+    var group=new UserModel({name:request.body.group_name,owner_id:request.user_id,members:request.body.members});
     group.save(function(err){
         if(!err){
-          response.json({isDone:true});
+          response.json({status:true});
         }
         else {
-          response.json({isDone:false});
+          response.json({status:false});
         }
       });
   }
   else {
-    response.json({isDone:false});
+    response.json({status:false});
   }
 });
 
-router.put("/:id",postMiddleware,function(request,response){
-// validate access token
+router.put("/",postMiddleware,function(request,response){
 if(request.params.id)
  {
   mongoose.model("groups").find({_id:request.params.id},{},function(err,groups){
