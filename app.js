@@ -16,7 +16,7 @@ fs.readdirSync(__dirname+"/models").forEach(function(file){
 //require all routers
 var authRouter = require("./controllers/auth");
 var userRouter = require("./controllers/user");
-// var groupRouter = require("./controllers/group");
+var groupRouter = require("./controllers/group");
 var orderRouter = require("./controllers/order");
 // var notificationRouter = require("./controllers/notification");
 
@@ -47,7 +47,7 @@ server.use(function(request,response,next){
    });
 });
 server.use("/user",userRouter);
-// server.use("/group",groupRouter);
+server.use("/group",groupRouter);
 server.use("/order",orderRouter);
 // server.use("/notification",notificationRouter);
 

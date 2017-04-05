@@ -6,8 +6,8 @@ var postMiddleware = bodyParser.urlencoded({extended:true});
 
 var mongoose = require("mongoose");
 
-// var friendRouter = require("./friend");
-// router.use("/friend",friendRouter);
+var friendsRouter = require("./friends");
+router.use("/friends",friendsRouter);
 
 router.get("/search/:field/:value",function(request,response){
   var field = request.params.field;
