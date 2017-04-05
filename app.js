@@ -6,8 +6,9 @@ var jwt = require("jsonwebtoken");
 const APP_SECRET = "F@#e$!%w!&_q@#!z";
 //MongoDB connection
 var mongoose = require("mongoose");
-var db_host = "localhost:27017/yallaNotlob";
-mongoose.connect("mongodb://"+db_host);
+// var db_host = "localhost:27017/yallaNotlob";
+var db_host = "mongodb://yasser:123456@ds153730.mlab.com:53730/yallanotlob";
+mongoose.connect(db_host);
 
 //require all files under models folder
 fs.readdirSync(__dirname+"/models").forEach(function(file){
