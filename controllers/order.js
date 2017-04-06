@@ -5,6 +5,8 @@ var bodyParser = require("body-parser");
 var postMiddleware = bodyParser.urlencoded({extended:true});
 var validator = require("validator");
 var mongoose = require("mongoose");
+// add to accept json in request body
+router.use(bodyParser.json());
 
 router.get("/",function(request,response){
   mongoose.model("orders").find({owner_id:request.user_id},function(err,orders){

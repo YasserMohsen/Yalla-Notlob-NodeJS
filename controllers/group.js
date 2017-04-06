@@ -5,6 +5,8 @@ var isArray=require('validate.io-array');
 var validator = require("validator");
 var postMiddleware=bodyParser.urlencoded({extended:false});
 var router=express.Router();
+// add to accept json in request body
+router.use(bodyParser.json());
 
 router.get("/",function(request,response){
     mongoose.model("groups").find({owner_id:request.user_id},{},function(err,ownedgroups){

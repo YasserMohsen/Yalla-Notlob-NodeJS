@@ -7,6 +7,9 @@ var postMiddleware = bodyParser.urlencoded({extended:true});
 var mongoose = require("mongoose");
 
 var friendsRouter = require("./friends");
+// add to accept json in request body
+router.use(bodyParser.json());
+
 router.use("/friends",friendsRouter);
 
 router.get("/search/:field/:value",function(request,response){

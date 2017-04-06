@@ -26,6 +26,9 @@ var uploadFileMiddleware = multer({
     }
   }
 });
+// add to accept json in request body
+router.use(bodyParser.json());
+
 
 router.post("/login",postMiddleware,function(request,response){
   var email = validator.escape(request.body.email);

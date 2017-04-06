@@ -4,6 +4,8 @@ var mongoose=require("mongoose");
 var validator = require("validator");
 var postMiddleware=bodyParser.urlencoded({extended:false});
 var router=express.Router();
+// add to accept json in request body
+router.use(bodyParser.json());
 
 router.get("/friends",function(request,response){
 if(request.user_id)
