@@ -2,6 +2,7 @@ var express=require('express');
 var bodyParser=require('body-parser');
 var mongoose=require("mongoose");
 var isArray=require('validate.io-array');
+var validator = require("validator");
 var postMiddleware=bodyParser.urlencoded({extended:false});
 var router=express.Router();
 
@@ -28,82 +29,105 @@ router.get("/",function(request,response){
 });
 
 router.post("/",postMiddleware,function(request,response){
-  if(request.body.group_name && request.body.members && isArray(request.body.members))
+// validate not being member of group i own
+  var isValid=true;
+  var errors=[];
+  if (!request.body.group_name)
   {
+    errors.push(" * Group Name Required");
+    isValid=false;
+  }
+  if (!request.body.members && isArray(request.body.members))
+  {
+    errors.push(" * Check Group Members");
+    isValid=false;
+  }
+
+  if(isValid)
+  {
+    var groupName=validator.escape(request.body.group_name);
     var UserModel=mongoose.model("groups");
-    var group=new UserModel({name:request.body.group_name,owner_id:request.user_id,members:request.body.members});
+    var group=new UserModel({name:groupName,owner_id:request.user_id,members:request.body.members});
     group.save(function(err){
         if(!err){
-          response.json({status:true});
+          response.json({status:true,newGroup:group});
         }
         else {
-          response.json({status:false});
+          response.json({status:false,error:err});
         }
       });
-  }
-  else {
-    response.json({status:false});
-  }
+   }
 });
 
 router.put("/",postMiddleware,function(request,response){
-if(request.params.id)
+if(request.body.groupID)
  {
-  mongoose.model("groups").find({_id:request.params.id},{},function(err,groups){
-    if(!err)
-    {
-      mongoose.model("groups").update({_id:request.params.id},{$set:{name:request.body.group_name,owner_id:request.body.owner,members:request.body.members}},function(err,group){
-        if(!err)
-        {
-          response.json({isDone:true,groupData:group});
-        }else {
-          response.json({isDone:false});
-         }
-       });
-    }
-    else {
-      response.json({isDone:false,err:"not found"});
-    }
-  });
+   var isValid=true;
+   var errors=[];
+   if (!request.body.group_name)
+   {
+     errors.push(" * Group Name Required");
+     isValid=false;
+   }
+   if (!request.body.members && isArray(request.body.members))
+   {
+     errors.push(" * Check Group Members");
+     isValid=false;
+   }
+  if(isValid)
+  {
+    var groupName=validator.escape(request.body.group_name);
+    mongoose.model("groups").find({_id:request.body.groupID},{},function(err,groups){
+      if(!err)
+      {
+        mongoose.model("groups").update({_id:request.params.id},{$set:{name:groupName,members:request.body.members}},function(err,group){
+          if(!err)
+          {
+            response.json({status:true,groupData:group});
+          }else {
+            response.json({status:false,error:err});
+          }
+        });
+      }
+      else {
+        response.json({status:false,error:" Group ID not found"});
+      }
+    });
  }
  else {
-  response.json({isDone:false});
+   response.json({status:false,error:errors});
+ }
+}
+else {
+  response.json({status:false,err:" *Empty Group ID"});
  }
 });
 
-router.delete("/:id",postMiddleware,function(request,response){
-// validate access token
-console.log(request.params.id);
-if(request.params.id)
+router.delete("/",postMiddleware,function(request,response){
+if(request.user_id == request.body.groupID)
 {
-  //mongoose.model("users").find({_id:request.body.id},{},function(err,user){
-    //if(!err)
-    //{
-      mongoose.model("groups").find({_id:request.params.id},{},function(err,group){
-        if(!err)
-        {
-          console.log(group);
-          mongoose.model("groups").remove({_id:request.params.id},function(err,group){
-            if(!err){
-                console.log(group);
-              response.json({isDone:true});
-            }
-            else {
-              response.json({isDone:false});
-            }
-          });
+  mongoose.model("groups").find({_id:request.body.groupID},{},function(err,group){
+    if(!err && group)
+    {
+      console.log(group);
+      mongoose.model("groups").remove({_id:request.params.id},function(err,group){
+        if(!err){
+            console.log(group);
+          response.json({isDone:true});
         }
         else {
-          response.json({isDone:false,err:"not found"});
+          response.json({isDone:false,error:err});
         }
       });
-    //}else{
-    //  response.json({isDone:false});
-  //}});
+    }
+    else {
+      response.json({status:false,error:"not found"});
+    }
+  });
 }
 else {
-    response.json({isDone:false});
-  }
+  response.json({status:false,error:" * Delete is not Permitted"});
+}
 });
 
 router.get("/search/name/:value",function(request,response){
