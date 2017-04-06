@@ -80,10 +80,10 @@ if(request.body.groupID)
     mongoose.model("groups").find({_id:request.body.groupID},{},function(err,groups){
       if(!err)
       {
-        mongoose.model("groups").update({_id:request.params.id},{$set:{name:groupName,members:request.body.members}},function(err,group){
+        mongoose.model("groups").update({_id:request.params.id},{$set:{name:groupName,members:request.body.members}},function(err){
           if(!err)
           {
-            response.json({status:true,groupData:group});
+            response.json({status:true});
           }else {
             response.json({status:false,error:err});
           }
@@ -110,7 +110,7 @@ if(request.user_id == request.body.groupID)
     if(!err && group)
     {
       console.log(group);
-      mongoose.model("groups").remove({_id:request.params.id},function(err,group){
+      mongoose.model("groups").remove({_id:request.body.groupID,owner_id:request.user_id},function(err,group){
         if(!err){
             console.log(group);
           response.json({isDone:true});
