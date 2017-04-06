@@ -73,4 +73,27 @@ router.delete("/:friendID",function(request,response){
     response.json({isDone:false,err:"invalid friend id"});
   }
 });
+
+//search in friends
+router.get("/search/:field/:value",function(request,response){
+  var field = request.params.field;
+  var value = request.params.value;
+  var query = {};
+  query[field] = new RegExp("%"+value+"%");
+  mongoose.model("users").findOne({_id:request.user_id},function(err,user){
+    if(!err){
+      mongoose.model("users").populate(user,{path:'friends',match:query},function(err,populated_user){
+        if(!err){
+          response.json(user.friends);
+        }else{
+          console.log(err);
+          response.json("population error");
+        }
+      });
+    }else{
+      console.log(err);
+      response.json("error");
+    }
+  })
+});
 module.exports=router;

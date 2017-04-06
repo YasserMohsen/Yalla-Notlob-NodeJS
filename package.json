@@ -14,5 +14,8 @@
     "validate.io-array": "^1.0.6",
     "sha.js": "^2.4.8",
     "validator": "^7.0.0"
+  },
+  "scripts":{
+    "start":"node app.js"
   }
 }
