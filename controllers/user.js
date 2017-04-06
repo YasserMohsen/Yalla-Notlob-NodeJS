@@ -13,10 +13,11 @@ router.get("/search/:field/:value",function(request,response){
   var field = request.params.field;
   var value = request.params.value;
   var query = {};
-  query[field] = new RegExp("^"+value);
+  query[field] = new RegExp("%"+value+"%");
   mongoose.model("users").find(query,function(err,data){
-    response.json(data);
-    if(err){
+    if(!err){
+      response.json(data);
+    }else{
       console.log(err);
       response.json("error");
     }
