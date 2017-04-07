@@ -155,8 +155,6 @@ router.delete("/:id",function(request,response){
             console.log("error 1");
             response.json({status:false});
         }else{
-            console.log(request.user_id);
-            console.log(order.owner_id);
             if(order && request.user_id === (order.owner_id).toString()){
                 order.remove(function(err){
                   if(err){

@@ -104,31 +104,31 @@ else {
 });
 
 router.delete("/:groupID",postMiddleware,function(request,response){
-if(request.user_id == request.params.groupID)
-{
-  mongoose.model("groups").find({_id:request.params.groupID},{},function(err,group){
-    if(!err && group)
-    {
-      console.log(group);
-      mongoose.model("groups").remove({_id:request.params.groupID,owner_id:request.user_id},function(err,group){
-        if(!err){
-            console.log(group);
-          response.json({isDone:true});
+    mongoose.model("groups").findById(request.params.groupID,function(err,group){
+        if(err){
+            response.json({status:false,error:"System Retrieve Error"})
+        }else{
+            //check group id existance
+            if(!group){
+                response.json({status:false,error:"Group id not found"});
+            }else{
+                //check delete permission - group ownership
+                if(request.user_id != group.owner_id){
+                    response.json({status:false,error:"Not allowed"});
+                }else{
+                    //remove group
+                    group.remove(function(err){
+                        if(err){
+                            response.json({status:false,error:"System Save Error"})
+                        }else{
+                            response.json({status:true});
+                        }
+                    })
+                }
+            }
         }
-        else {
-          response.json({isDone:false,error:err});
-        }
-      });
-    }
-    else {
-      response.json({status:false,error:"not found"});
-    }
-  });
-}
-else {
-  response.json({status:false,error:" * Delete is not Permitted"});
-}
-});
+    })
+})
 
 router.get("/search/name/:value",function(request,response){
   var value = request.params.value;
