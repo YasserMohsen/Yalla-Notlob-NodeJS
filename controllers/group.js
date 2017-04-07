@@ -59,8 +59,8 @@ router.post("/",postMiddleware,function(request,response){
    }
 });
 
-router.put("/",postMiddleware,function(request,response){
-if(request.body.groupID)
+router.put("/:groupID",postMiddleware,function(request,response){
+if(request.params.groupID)
  {
    var isValid=true;
    var errors=[];
@@ -77,10 +77,10 @@ if(request.body.groupID)
   if(isValid)
   {
     var groupName=validator.escape(request.body.group_name);
-    mongoose.model("groups").find({_id:request.body.groupID},{},function(err,groups){
+    mongoose.model("groups").find({_id:request.params.groupID},{},function(err,groups){
       if(!err)
       {
-        mongoose.model("groups").update({_id:request.params.id},{$set:{name:groupName,members:request.body.members}},function(err){
+        mongoose.model("groups").update({_id:request.params.groupID},{$set:{name:groupName,members:request.body.members}},function(err){
           if(!err)
           {
             response.json({status:true});
@@ -103,14 +103,14 @@ else {
  }
 });
 
-router.delete("/",postMiddleware,function(request,response){
-if(request.user_id == request.body.groupID)
+router.delete("/:groupID",postMiddleware,function(request,response){
+if(request.user_id == request.params.groupID)
 {
-  mongoose.model("groups").find({_id:request.body.groupID},{},function(err,group){
+  mongoose.model("groups").find({_id:request.params.groupID},{},function(err,group){
     if(!err && group)
     {
       console.log(group);
-      mongoose.model("groups").remove({_id:request.body.groupID,owner_id:request.user_id},function(err,group){
+      mongoose.model("groups").remove({_id:request.params.groupID,owner_id:request.user_id},function(err,group){
         if(!err){
             console.log(group);
           response.json({isDone:true});
