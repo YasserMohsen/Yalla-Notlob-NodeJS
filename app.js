@@ -1,13 +1,14 @@
 var express = require("express");
 var server = express();
 var fs = require("fs");
+var bodyParser = require("body-parser");
 //jwt
 var jwt = require("jsonwebtoken");
 const APP_SECRET = "F@#e$!%w!&_q@#!z";
 //MongoDB connection
 var mongoose = require("mongoose");
-// var db_host = "localhost:27017/yallaNotlob";
-var db_host = "mongodb://yasser:123456@ds153730.mlab.com:53730/yallanotlob";
+var db_host = "localhost:27017/yallaNotlob";
+// var db_host = "mongodb://yasser:123456@ds153730.mlab.com:53730/yallanotlob";
 mongoose.connect(db_host);
 
 //require all files under models folder
@@ -23,18 +24,25 @@ var orderRouter = require("./controllers/order");
 
 server.use(function(request,response,next){
   response.setHeader("X-XSS-Protection",1);
+  response.setHeader('Access-Control-Allow-Headers','Content-Type');
   response.setHeader("Access-Control-Allow-Origin","*");
   response.setHeader("Access-Control-Allow-Methods","GET,POST,PUT,DELETE");
   response.setHeader("Cache-Control","no-cache");
   next();
 })
-
+server.use(bodyParser.json());
 //use routers
 server.use("/auth",authRouter);
 //check jwt access token
 server.use(function(request,response,next){
   // var access_token = request.headers.authorization;
-  var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTEzOTI2MTEsImV4cCI6MTUyMjkyODYxMSwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlM2NhN2RkNTFiY2UyZGE1MWE2MWFiIn0.5mx-XCG3rn8lCCDt18fKOgA5-sY-Oi9gL8wyQmK35mI";
+  // yasser // 
+  var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNDhiODVjZGQ0MjBhZDYyNDMwIn0.x1NqlQbkZV1rVYB_KpzSTm-wlZzOpo1Ec6oo2QfcNn4";
+  //hassan // var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNDhiODVjZGQ0MjBhZDYyNDMxIn0.k_E-gA6STkPZmnTItoMmqS59PnX-289uidq8UZD6a8E";
+  // var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNzJiODVjZGQ0MjBhZDYyNDMxIn0.V5gwPGwFJvDZRIdq1C8S8alk305zHCmyuAspkdHi4sE";
+  //abdo // var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNDhiODVjZGQ0MjBhZDYyNDMyIn0.tBudv-fd9RGK4rTdnHlmtWS5opl2i7BOO4t_q-lwbQE";
+  //ahmed // var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNDhiODVjZGQ0MjBhZDYyNDMzIn0.7V8yBzktlrigUaCkHsT0GR2ubYiuMZpGDqkjxFB460M";
+  //mostafa // var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNDhiODVjZGQ0MjBhZDYyNDM0In0.0BNAhGllAttPV1tpZ6UmghXuWtGbVd1jCADoEEasL_o";
   jwt.verify(access_token,APP_SECRET,function(err,decoded){
      if(err){
        console.log("error");
@@ -43,6 +51,7 @@ server.use(function(request,response,next){
      }else{
        console.log("authorized");
        request.user_id = decoded._id;
+       console.log(request.user_id);
        next();
      }
    });

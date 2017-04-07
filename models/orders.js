@@ -8,10 +8,8 @@ var orders = new Schema({
   menu:String,
   date:{type:Date,default:Date.now},
   checkout:{type:Boolean,default:false},  //false => still in progress
-  invited_members:{
-    for:String, //group or user
-    id:Schema.Types.ObjectId
-  },
+  invited_group:{type:Schema.Types.ObjectId,ref:'groups'},
+  invited_user:{type:Schema.Types.ObjectId,ref:'users'},
   joined_members:[{type:Schema.Types.ObjectId,ref:"users"}],
   meals:[{
     user_id:{type:Schema.Types.ObjectId,ref:"users"},
@@ -23,7 +21,8 @@ var orders = new Schema({
       set: v => Math.round(v),
       default:1
     },
-    comment:String
+    comment:String,
+    date:{type:Date,default:Date.now}
   }]
 })
 
