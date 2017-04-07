@@ -6,7 +6,7 @@ var postMiddleware = bodyParser.urlencoded({extended:true});
 var validator = require("validator");
 var mongoose = require("mongoose");
 
-//get owned and invited orders
+//GET owned and invited orders ...
 router.get("/",function(request,response){
   mongoose.model("orders").find({},{meals:false}).populate('invited_group').exec(function(err,orders){
     if(!err){
@@ -37,7 +37,7 @@ router.get("/",function(request,response){
   // mongoose.model("orders").find({$and:[{invited_group:{$exists:true}},{owner_id:{$ne:request.user_id}}]},{meals:false}).populate({path:'invited_group',match:{'members':{$elemMatch:{$in:[request.user_id]}}}}).exec(function(err,invited_group_orders){
 });
 
-//get an order details
+//GET an order details ...
 router.get("/:id",function(request,response){
   mongoose.model("orders").findOne({_id:request.params.id})
   .populate({path:'meals.user_id',select:'name avatar'})
@@ -54,14 +54,13 @@ router.get("/:id",function(request,response){
   })
 });
 
-//create order
+//POST an order ...
 router.post("/",postMiddleware,function(request,response){
   var name = validator.escape(request.body.name);
   var restaurant = validator.escape(request.body.restaurant);
   // var menu = validator.escape(request.body.menu);
   var invited_id = validator.escape(request.body.invited_id);
   var invited_type = validator.escape(request.body.invited_type);
-  // var invited = {for:"user",id:"58e235e67a12b018feb4d862"};
   // var invited_id = "58e6cfa0b85cdd420ad62434";
   // var invited_type = "user";
   //******************validation*******************************
@@ -80,7 +79,6 @@ router.post("/",postMiddleware,function(request,response){
   }
   //***********************************************************
   if(invited_type === "group" || invited_type === "user"){
-    console.log(invited_id);
     mongoose.model(invited_type+"s").findOne({"_id":invited_id},function(err,result){
       if(!result || err){
           errors.push("Invalid invited group or member");
@@ -129,7 +127,7 @@ router.post("/",postMiddleware,function(request,response){
   }
 });
 
-//submit owned order
+//submit owned order ...
 router.put("/finish/:id",function(request,response){
     mongoose.model("orders").findById(request.params.id,function(err,order){
         if(err){
@@ -150,7 +148,7 @@ router.put("/finish/:id",function(request,response){
     })
 });
 
-//delete owned order
+//DELETE owned order ...
 router.delete("/:id",function(request,response){
     mongoose.model("orders").findById(request.params.id,function(err,order){
         if(err){
@@ -176,7 +174,7 @@ router.delete("/:id",function(request,response){
     })
 });
 
-//add meal in an owned or invited order
+//POST meal in an owned or invited order ...
 router.post("/:id/meal",postMiddleware,function(request,response){
     //meal details
     var item = validator.escape(request.body.item);
@@ -209,9 +207,9 @@ router.post("/:id/meal",postMiddleware,function(request,response){
             if(order){
                 if(String(order.owner_id) === request.user_id || String(order.invited_user) === request.user_id || (typeof order.invited_group !== 'undefined' && (order.invited_group.members.indexOf(request.user_id) > -1))){
                     var meal = {user_id:request.user_id,item:item,price:price,amount:amount,comment:comment};
-                    console.log(meal);
+                    // console.log(meal);
                     order.meals.push(meal);
-                    console.log(order);
+                    // console.log(order);
                     order.save(function(err,order){
                         if(err){
                             response.json({status:false,errors:["System error"]});
@@ -229,9 +227,48 @@ router.post("/:id/meal",postMiddleware,function(request,response){
     })
 });
 
-//delete an owned meal from an owned or invited order
+//DELETE an owned meal from an owned or invited order ...
 router.delete("/:order_id/meal/:meal_id",function(request,response){
-    
+    mongoose.model("orders").findById(request.params.order_id,function(err,order){
+        if(err){
+            response.json({status:false,error:"System Error - Cannot Retrieve"});
+        }else{
+            //check order id existance
+            if(!order){
+                response.json({status:false,error:"Invalid order id"});
+            }else{
+                //check meal id existance in the order
+                var meals = order.meals;
+                var target = -1;
+                for (var i = 0; i < meals.length; i++) {
+                    if(request.params.meal_id == meals[i]._id){
+                        target = i;
+                        break;
+                    }
+                }
+                console.log("t: "+target);
+                if(target === -1){
+                    response.json({status:false,error:"This meal id is not exist in this order"})
+                }else{
+                    //check permission - meal ownership
+                    var target_meal = meals[target];
+                    if(target_meal.user_id != request.user_id){
+                        response.json({status:false,error:"Your are not allowed to delete this meal"})
+                    }else{
+                        //You are allowed to DELETE THE MEAL NOW
+                        order.meals.splice(i,1);
+                        order.save(function(err,order){
+                            if(err){
+                                response.json({status:false,error:"System Error - Cannot Save"});
+                            }else{
+                                response.json({status:true,deleted_meal:target_meal});
+                            }
+                        })
+                    }
+                }
+            }
+        }
+    })
 });
 
 module.exports = router;
