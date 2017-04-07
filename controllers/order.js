@@ -33,12 +33,18 @@ router.get("/",function(request,response){
     }
   })
   // mongoose.model("orders").find({owner_id:request.user_id},{meals:false},function(err,owned_orders){
-  //     mongoose.model("orders").find({invited_user:request.user_id},{meals:false},function(err,invited_user_orders){
-  //         mongoose.model("orders").find({$and:[{invited_group:{$exists:true}},{owner_id:{$ne:request.user_id}}]},{meals:false}).populate({path:'invited_group',match:{'members':{$elemMatch:{$in:[request.user_id]}}}}).exec(function(err,invited_group_orders){
+  // mongoose.model("orders").find({invited_user:request.user_id},{meals:false},function(err,invited_user_orders){
+  // mongoose.model("orders").find({$and:[{invited_group:{$exists:true}},{owner_id:{$ne:request.user_id}}]},{meals:false}).populate({path:'invited_group',match:{'members':{$elemMatch:{$in:[request.user_id]}}}}).exec(function(err,invited_group_orders){
 });
+
 //get an order details
 router.get("/:id",function(request,response){
-  mongoose.model("orders").findOne({_id:request.params.id}).populate({path:'meals.user_id',select:'name avatar'}).exec(function(err,order_details){
+  mongoose.model("orders").findOne({_id:request.params.id})
+  .populate({path:'meals.user_id',select:'name avatar'})
+  .populate({path:'invited_user',select:'name avatar'})
+  .populate({path:'invited_group'})
+  .populate({path:'invited_group.members',select:'name avatar'})
+  .exec(function(err,order_details){
     if(!err){
       response.json({status:true,order:order_details});
     }else{
@@ -48,6 +54,7 @@ router.get("/:id",function(request,response){
   })
 });
 
+//create order
 router.post("/",postMiddleware,function(request,response){
   var name = validator.escape(request.body.name);
   var restaurant = validator.escape(request.body.restaurant);
@@ -76,7 +83,6 @@ router.post("/",postMiddleware,function(request,response){
     console.log(invited_id);
     mongoose.model(invited_type+"s").findOne({"_id":invited_id},function(err,result){
       if(!result || err){
-          console.log("Result: "+ result);
           errors.push("Invalid invited group or member");
           response.json({status:false,errors:errors});
       }else{
@@ -87,10 +93,8 @@ router.post("/",postMiddleware,function(request,response){
                   response.json({status:false,errors:errors});
               }
           }else{
-              console.log("ssss" + request.user_id);
               mongoose.model("users").findOne({_id:request.user_id},function(err,user){
                   if(!err && user){
-                      console.log("Hereee "+user);
                       if(user.friends.indexOf(invited_id) < 0){
                           errors.push("Invalid invited friend");
                       }
@@ -98,21 +102,21 @@ router.post("/",postMiddleware,function(request,response){
                       errors.push("logged user not found");
                   }
                   if(errors.length > 0){
-                    response.json({status:false,errors:errors});
+                      response.json({status:false,errors:errors});
                   }else{
-                    //add order in DB
-                    var orderModel = mongoose.model("orders");
-                    var orderObject = {owner_id:request.user_id,name:name,restaurant:restaurant};
-                    orderObject["invited_"+invited_type] = invited_id;
-                    var order = new orderModel(orderObject);
-                    order.save(function(err,new_order){
-                      if(!err){
-                        response.json({status:true,order:new_order});
-                      }else{
-                        console.log(err);
-                        response.json({status:false,errors:["System Error! Come back later"]});
-                      }
-                    })
+                      //add order in DB
+                      var orderModel = mongoose.model("orders");
+                      var orderObject = {owner_id:request.user_id,name:name,restaurant:restaurant};
+                      orderObject["invited_"+invited_type] = invited_id;
+                      var order = new orderModel(orderObject);
+                      order.save(function(err,new_order){
+                          if(!err){
+                            response.json({status:true,order:new_order});
+                          }else{
+                            console.log(err);
+                            response.json({status:false,errors:["System Error! Come back later"]});
+                          }
+                      })
                   }
               })
           }
@@ -125,12 +129,109 @@ router.post("/",postMiddleware,function(request,response){
   }
 });
 
+//submit owned order
 router.put("/finish/:id",function(request,response){
-
+    mongoose.model("orders").findById(request.params.id,function(err,order){
+        if(err){
+            response.json({status:false});
+        }else{
+            if(order && request.user_id === (order.owner_id).toString()){
+                order.checkout = true;
+                order.save(function(err,order){
+                    if(err){
+                        response.json({status:false});
+                    }
+                    response.json({status:true});
+                })
+            }else{
+              response.json({status:false});
+            }
+        }
+    })
 });
 
-router.delete("/",function(request,response){
+//delete owned order
+router.delete("/:id",function(request,response){
+    mongoose.model("orders").findById(request.params.id,function(err,order){
+        if(err){
+            console.log("error 1");
+            response.json({status:false});
+        }else{
+            console.log(request.user_id);
+            console.log(order.owner_id);
+            if(order && request.user_id === (order.owner_id).toString()){
+                order.remove(function(err){
+                  if(err){
+                      console.log("error 2");
+                      response.json({status:false});
+                  }else{
+                      response.json({status:true});
+                  }
+                })
+            }else{
+                console.log("error 3");
+                response.json({status:false});
+            }
+        }
+    })
+});
 
+//add meal in an owned or invited order
+router.post("/:id/meal",postMiddleware,function(request,response){
+    //meal details
+    var item = validator.escape(request.body.item);
+    var price = validator.escape(request.body.price);
+    var amount = validator.escape(request.body.amount) || "1";
+    var comment = validator.escape(request.body.comment);
+    //******************validation*******************************
+    var errors = [];
+    //1.validate item name
+    if(validator.isEmpty(item)){
+        errors.push("Please type an item");
+    }
+    //2.validate price
+    if(validator.isEmpty(price)){
+        errors.push("Please enter your item price");
+    }
+    if(Number.isNaN(price * 1) || (price * 1) <= 0){
+        errors.push("Invalid price");
+    }
+    //3.validate invited
+    if((amount * 1) <= 0 || !Number.isInteger(amount * 1)){
+        errors.push("Invalid amount");
+    }
+    if(errors.length > 0) response.json({status:false,errors:errors});
+    //***********************************************************
+    mongoose.model("orders").findById(request.params.id).populate('invited_group').exec(function(err,order){
+        if(err){
+            response.json({status:false,errors:["System Error! Come back later"]});
+        }else{
+            if(order){
+                if(String(order.owner_id) === request.user_id || String(order.invited_user) === request.user_id || (typeof order.invited_group !== 'undefined' && (order.invited_group.members.indexOf(request.user_id) > -1))){
+                    var meal = {user_id:request.user_id,item:item,price:price,amount:amount,comment:comment};
+                    console.log(meal);
+                    order.meals.push(meal);
+                    console.log(order);
+                    order.save(function(err,order){
+                        if(err){
+                            response.json({status:false,errors:["System error"]});
+                        }else{
+                            response.json({status:true,order:order});
+                        }
+                    })
+                }else{
+                    response.json({status:false,errors:["You are not allowed to add a meal in that order"]});
+                }
+            }else{
+                response.json({status:false,errors:["Invalid order id"]});
+            }
+        }
+    })
+});
+
+//delete an owned meal from an owned or invited order
+router.delete("/:order_id/meal/:meal_id",function(request,response){
+    
 });
 
 module.exports = router;
