@@ -5,7 +5,7 @@ var validator = require("validator");
 var postMiddleware=bodyParser.urlencoded({extended:false});
 var router=express.Router();
 
-router.get("/friends",function(request,response){
+router.get("/",function(request,response){
 if(request.user_id)
 {
   mongoose.model("users").findOne({_id:request.user_id},{friends:true},function(err,userFriends){
@@ -25,16 +25,16 @@ else {
 }
 });
 
-router.put("/friends",postMiddleware,function(request,response){
-  if (request.body.friendID != request.user_id)
+router.put("/:friendID",postMiddleware,function(request,response){
+  if (request.params.friendID != request.user_id)
   {
-    mongoose.model("users").findOne({_id:request.body.friendID},{},function(err,friend){
+    mongoose.model("users").findOne({_id:request.params.friendID},{},function(err,friend){
       if(!err && friend)
       {
         mongoose.model("users").findOne({_id:request.user_id},{_id:false,friends:true},function(err,userFriends){
-          if(!userFriends.friends.includes(request.body.friendID))
+          if(!userFriends.friends.includes(request.params.friendID))
           {
-            mongoose.model("users").update({_id:request.body.id},{$push:{friends:request.body.friendID}},function(err,user){
+            mongoose.model("users").update({_id:request.user_id},{$push:{friends:request.params.friendID}},function(err,user){
               if(!err)
               {
                 response.json({status:true,friendData:friend});
@@ -58,13 +58,13 @@ router.put("/friends",postMiddleware,function(request,response){
   }
 });
 
-router.delete("/friends",function(request,response){
-  if(request.body.friendID)
+router.delete("/:friendID",function(request,response){
+  if(request.params.friendID)
   {
     mongoose.model("users").findOne({_id:request.user_id},{_id:false,friends:true},function(err,userFriends){
-      if(userFriends.friends.includes(request.body.friendID))
+      if(userFriends.friends.includes(request.params.friendID))
       {
-          mongoose.model("users").update({_id:request.user_id},{$pull:{friends:request.body.friendID}},function(err){
+          mongoose.model("users").update({_id:request.user_id},{$pull:{friends:request.params.friendID}},function(err){
           if(!err){
 
             response.json({status:true});
