@@ -30,13 +30,14 @@ server.use(function(request,response,next){
   response.setHeader("Cache-Control","no-cache");
   next();
 })
+// add to accept json in request body
 server.use(bodyParser.json());
 //use routers
 server.use("/auth",authRouter);
 //check jwt access token
 server.use(function(request,response,next){
   // var access_token = request.headers.authorization;
-  // yasser // 
+  // yasser //
   var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNDhiODVjZGQ0MjBhZDYyNDMwIn0.x1NqlQbkZV1rVYB_KpzSTm-wlZzOpo1Ec6oo2QfcNn4";
   //hassan // var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNDhiODVjZGQ0MjBhZDYyNDMxIn0.k_E-gA6STkPZmnTItoMmqS59PnX-289uidq8UZD6a8E";
   // var access_token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiIiLCJpYXQiOjE0OTE1MjM3MzMsImV4cCI6MTUyMzA1OTczMiwiYXVkIjoiIiwic3ViIjoiIiwiX2lkIjoiNThlNmNmNzJiODVjZGQ0MjBhZDYyNDMxIn0.V5gwPGwFJvDZRIdq1C8S8alk305zHCmyuAspkdHi4sE";
