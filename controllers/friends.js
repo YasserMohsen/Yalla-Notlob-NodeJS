@@ -11,7 +11,7 @@ if(request.user_id)
   mongoose.model("users").findOne({_id:request.user_id},{friends:true},function(err,userFriends){
     if(!err && userFriends)
     {
-      mongoose.model("users").populate(user,{path:'friends'},function(err,user_friends){
+      mongoose.model("users").populate(userFriends,{path:'friends'},function(err,user_friends){
         response.json({status:true,friends:user_friends});
       });
     }
@@ -89,7 +89,7 @@ router.get("/search/:field/:value",function(request,response){
   var field = request.params.field;
   var value = request.params.value;
   var query = {};
-  query[field] = new RegExp("%"+value+"%");
+  query[field] = new RegExp(value);
   mongoose.model("users").findOne({_id:request.user_id},function(err,user){
     if(!err){
       mongoose.model("users").populate(user,{path:'friends',match:query},function(err,populated_user){

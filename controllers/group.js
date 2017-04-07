@@ -133,7 +133,7 @@ else {
 router.get("/search/name/:value",function(request,response){
   var value = request.params.value;
   var query = {owner_id:request.user_id};
-  query[name] = new RegExp("%"+value+"%");
+  query[name] = new RegExp(value);
   mongoose.model("groups").find(query,function(err,groups){
     if(!err){
       response.json(groups);
