@@ -29,7 +29,6 @@ router.get("/",function(request,response){
 });
 
 router.post("/",postMiddleware,function(request,response){
-// validate not being member of group i own
   var isValid=true;
   var errors=[];
   if (!request.body.group_name)
@@ -37,10 +36,31 @@ router.post("/",postMiddleware,function(request,response){
     errors.push(" * Group Name Required");
     isValid=false;
   }
-  if (!request.body.members && isArray(request.body.members))
+
+  if (request.body.members.length == 0  && isArray(request.body.members))
   {
     errors.push(" * Check Group Members");
     isValid=false;
+  }else {
+     if(request.body.members.includes(request.user_id))
+      {
+        errors.push(" * Invalid Group Member");
+        isValid=false;
+      }
+
+      var RepeatedMemebers={};
+      for(var i = request.body.members.length; i--; ){
+        RepeatedMemebers[members[i]] = 0;
+      }
+
+      request.body.members.forEach(function(member){
+        RepeatedMemebers[member]+=1;
+      });
+
+      if(Math.max.apply(null,Object.values(RepeatedMemebers))>1){
+        errors.push(" * Repeated Group Members");
+        isValid=false;
+      }
   }
 
   if(isValid)
@@ -69,11 +89,13 @@ if(request.params.groupID)
      errors.push(" * Group Name Required");
      isValid=false;
    }
-   if (!request.body.members && isArray(request.body.members))
+   if (request.body.members.length == 0 && isArray(request.body.members))
    {
      errors.push(" * Check Group Members");
      isValid=false;
    }
+
+
   if(isValid)
   {
     var groupName=validator.escape(request.body.group_name);
