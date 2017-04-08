@@ -12,6 +12,7 @@ var validator = require("validator");
 //jwt
 var jwt = require("jsonwebtoken");
 const APP_SECRET = "F@#e$!%w!&_q@#!z";
+
 //upload middleware
 var multer = require("multer");
 var uploadFileMiddleware = multer({
@@ -26,7 +27,10 @@ var uploadFileMiddleware = multer({
     }
   }
 });
-
+//////////////////////************************FACEBOOK******************************////////////////////////
+var facebookRouter = require("./facebook");
+router.use("/facebook",facebookRouter);
+//////////////////////************************FACEBOOK******************************////////////////////////
 router.post("/login",postMiddleware,function(request,response){
   var email = validator.escape(request.body.email);
   var password = request.body.password;
