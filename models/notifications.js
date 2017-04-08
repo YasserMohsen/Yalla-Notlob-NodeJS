@@ -4,6 +4,8 @@ var Schema = mongoose.Schema; //ORM Layer
 var notifications = new Schema({
   order_id:{type:Schema.Types.ObjectId,ref:"orders",required:true},
   status:{type:Boolean,default:false}, //false = unread
+  type:{type:String,required:true},
+  time:Date,
   user_id:{type:Schema.Types.ObjectId,ref:"users",required:true}
 })
 
