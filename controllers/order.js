@@ -84,11 +84,26 @@ router.post("/",postMiddleware,function(request,response){
           errors.push("Invalid invited group or member");
           response.json({status:false,errors:errors});
       }else{
+          //prepare the order to save
+          var orderModel = mongoose.model("orders");
+          var orderObject = {owner_id:request.user_id,name:name,restaurant:restaurant};
+          orderObject["invited_"+invited_type] = invited_id;
           //validate this user to add this friend or group
           if(invited_type === "group"){
               if(String(result.owner_id) !== request.user_id){
                   errors.push("Invalid invited group");
                   response.json({status:false,errors:errors});
+              }else{
+                  //save in database
+                  var order = new orderModel(orderObject);
+                  order.save(function(err,new_order){
+                      if(!err){
+                        response.json({status:true,order:new_order});
+                      }else{
+                        console.log(err);
+                        response.json({status:false,errors:["System Error! Come back later"]});
+                      }
+                  })
               }
           }else{
               mongoose.model("users").findOne({_id:request.user_id},function(err,user){
@@ -102,10 +117,7 @@ router.post("/",postMiddleware,function(request,response){
                   if(errors.length > 0){
                       response.json({status:false,errors:errors});
                   }else{
-                      //add order in DB
-                      var orderModel = mongoose.model("orders");
-                      var orderObject = {owner_id:request.user_id,name:name,restaurant:restaurant};
-                      orderObject["invited_"+invited_type] = invited_id;
+                      //save order in database
                       var order = new orderModel(orderObject);
                       order.save(function(err,new_order){
                           if(!err){
