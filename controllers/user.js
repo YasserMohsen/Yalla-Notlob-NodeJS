@@ -24,4 +24,16 @@ router.get("/search/:field/:value",function(request,response){
   })
 });
 
+router.get("/",function(request,response){
+  mongoose.model("users").findOne({_id:request.user_id},{_id:false,friends:true},function(err,friends){
+    if(!err){
+
+      response.json(friends);
+    }else{
+      console.log(err);
+      response.json("error");
+    }
+  });
+});
+
 module.exports = router;
