@@ -28,26 +28,41 @@ router.get("/",function(request,response){
   });
 });
 
-router.post("/",postMiddleware,function(request,response){
+router.post("/AddMember",postMiddleware,function(request,response){
   var isValid=true;
   var errors=[];
-  if (!request.body.group_name)
+  if (request.body.members.length == 0  && !(isArray(request.body.members)))
   {
-    errors.push(" * Group Name Required");
-    isValid=false;
-  }
-
-  if (request.body.members.length == 0  && isArray(request.body.members))
-  {
-    errors.push(" * Check Group Members");
-    isValid=false;
+      response.json({status:true,error:"* Group Members Required"});
   }else {
-     if(request.body.members.includes(request.user_id))
+    // check if members are friends
+    mongoose.model("users").findOne({_id:request.user_id},{friends:true},function(err,userFriends){
+     if(!err)
       {
-        errors.push(" * Invalid Group Member");
-        isValid=false;
+        var isFriends=true;
+        request.body.members.forEach(function(Gmember){
+          if(!userFriends.includes(Gmember))
+          {
+            isFriends=false;
+          }
+        });
+        if(!isFriends)
+        {
+          errors.push(" * Invalid Group member");
+          isValid=false;
+        }
       }
-
+      else {
+        response.json({status:false,error:err});
+      }
+    });
+    // group owner not one of the members
+    if(request.body.members.includes(request.user_id))
+    {
+      errors.push(" * Invalid Group Member");
+      isValid=false;
+    }
+    // RepeatedMembers in group
       var RepeatedMemebers={};
       for(var i = request.body.members.length; i--; ){
         RepeatedMemebers[members[i]] = 0;
@@ -58,9 +73,34 @@ router.post("/",postMiddleware,function(request,response){
       });
 
       if(Math.max.apply(null,Object.values(RepeatedMemebers))>1){
-        errors.push(" * Repeated Group Members");
-        isValid=false;
+        errors.push(" * Repeated Group Member");
+        isValid=false
       }
+
+      if(isValid)
+      {
+          response.json({status:true});
+      }
+      else {
+        response.json({status:false,error:errors});
+      }
+  }
+
+});
+
+router.post("/",postMiddleware,function(request,response){
+  var isValid=true;
+  var errors=[];
+  if (!request.body.group_name)
+  {
+    errors.push(" * Group Name Required");
+    isValid=false;
+  }
+
+  if (request.body.members.length == 0  && !(isArray(request.body.members)))
+  {
+    errors.push(" * Group Memebrs Required");
+    isValid=false;
   }
 
   if(isValid)
