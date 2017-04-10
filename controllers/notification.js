@@ -10,7 +10,7 @@ var OnlineUsers={};
 
 io.on("connection",function(socketClient){
   socketClient.on("NewUser",function(request.user_id){
-   users[request.user_id]=socketClient;
+   OnlineUsers[request.user_id]=socketClient;
   });
 
   socketClient.on("notify",function(orderID,users){
@@ -70,3 +70,4 @@ server.get("/",function(request,response){
 
   });
 });
+httpSERVER.listen(8090);
