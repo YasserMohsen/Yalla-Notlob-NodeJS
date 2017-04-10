@@ -56,11 +56,12 @@ router.get("/:id",function(request,response){
 
 //POST an order ...
 router.post("/",postMiddleware,function(request,response){
-  var name = validator.escape(request.body.name);
-  var restaurant = validator.escape(request.body.restaurant);
+  console.log(request.headers);
+  var name = validator.escape(request.body.name || '');
+  var restaurant = validator.escape(request.body.restaurant || '');
   // var menu = validator.escape(request.body.menu);
-  var invited_id = validator.escape(request.body.invited_id);
-  var invited_type = validator.escape(request.body.invited_type);
+  var invited_id = validator.escape(request.body.invited_id || '');
+  var invited_type = validator.escape(request.body.invited_type || '');
   // var invited_id = "58e6cfa0b85cdd420ad62434";
   // var invited_type = "user";
   //******************validation*******************************
