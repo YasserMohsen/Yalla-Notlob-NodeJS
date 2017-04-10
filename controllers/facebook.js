@@ -5,8 +5,8 @@ var router=express.Router();
 var jwt = require("jsonwebtoken");
 const APP_SECRET = "F@#e$!%w!&_q@#!z";
 //facebook identity
-const FACEBOOK_APP_ID = "";
-const FACEBOOK_APP_SECRET = "";
+const FACEBOOK_APP_ID = "123456789";
+const FACEBOOK_APP_SECRET = "123456789";
 //passport-facebook
 var passport = require("passport");
 var FacebookStrategy = require('passport-facebook').Strategy;
