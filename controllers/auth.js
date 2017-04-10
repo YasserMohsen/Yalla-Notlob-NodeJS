@@ -3,7 +3,7 @@ var router = express.Router();
 
 var bodyParser = require("body-parser");
 var postMiddleware = bodyParser.urlencoded({extended:true});
-
+var fs = require('fs');
 var mongoose = require("mongoose");
 
 var bcrypt = require("bcrypt");
@@ -16,7 +16,7 @@ const APP_SECRET = "F@#e$!%w!&_q@#!z";
 //upload middleware
 var multer = require("multer");
 var uploadFileMiddleware = multer({
-  dest:__dirname + "/../public/images",
+  dest:__dirname + "/../public/profile",
   fileFilter:function(req,file,callback){
     if(file.mimetype == "image/jpeg" || file.mimetype == "image/png"){
       req.fileStatus = "Image uploaded";
@@ -27,6 +27,8 @@ var uploadFileMiddleware = multer({
     }
   }
 });
+//base64 upload image
+
 //////////////////////************************FACEBOOK******************************////////////////////////
 var facebookRouter = require("./facebook");
 router.use("/facebook",facebookRouter);
@@ -71,6 +73,7 @@ router.post("/register",postMiddleware,function(request,response){
   var password = request.body.password;
   var repassword = request.body.repassword;
   var name = validator.escape(request.body.name);
+  var base64image = request.body.profile || '';
   //******************validation*******************************
   var errors = [];
   //1.validate name
@@ -89,27 +92,49 @@ router.post("/register",postMiddleware,function(request,response){
   if(!validator.isEmail(email)){
     errors.push("Invalid email address!");
   }
+  //4.validate image
+  var matches = base64image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+  if(matches.length != 2){
+    errors.push("Invalid Image");
+  }else{
+    var ext = matches[0];
+    var e = ext.split('/')[1];
+    if(e != "png" || e != "jpg"){
+      errors.push("Invalid Image extension");
+    }
+    var data = matches[1];
+  }
+  ////////////////////////////////////////////////
+  if(errors.length > 0){
+    response.json({loggedIn:false,errors:errors});
+  }
   mongoose.model("users").findOne({email:email},{email:true},function(err,user){
     if(!err && user){
-      errors.push("Email is already exist!");
-    }
-    if(errors.length > 0){
-      response.json({loggedIn:false,errors:errors});
+      response.json({loggedIn:false,errors:["Email is already exist!"]});
     }else{
       //hashed password
       var salt = bcrypt.genSaltSync();
       var hashedPassword = bcrypt.hashSync(password,salt);
-      //create user
-      var userModel = mongoose.model("users");
-      var user = new userModel({name:name,email:email,password:hashedPassword});
-      user.save(function(err){
-        if(!err){
-          response.json({loggedIn:true});
+      //upload image
+      var buf = new Buffer(data, 'base64');
+      var imageName = "pic" + Math.floor(Math.random()*(100000)) + "_" + (+new Date())+'.'+e;
+      fs.writeFile('/../public/profile/'+imageName, buf, function(err){
+        if(err){
+          response.json({loggedIn:false,errors:["Can not upload the image"]});
         }else{
-          console.log(err);
-          response.json({loggedIn:false,errors:["System Error! Come back later"]});
+          //create user
+          var userModel = mongoose.model("users");
+          var user = new userModel({name:name,email:email,password:hashedPassword,avatar:imageName});
+          user.save(function(err){
+            if(!err){
+              response.json({loggedIn:true});
+            }else{
+              console.log(err);
+              response.json({loggedIn:false,errors:["System Error! Come back later"]});
+            }
+          })
         }
-      })
+      });
     }
   })
 })
