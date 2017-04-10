@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Chat Client</title>
+    <script src="jquery.min.js" type="text/javascript"></script>
+    <script src="socket.io.js" type="text/javascript"></script>
+    <script type="text/javascript">
+      $(function(){
+        var selctedUsers=[];
+        var socket=io.connect("http://localhost:8090/");
+
+        socket.on("connect",function(){
+        user_id=prompt("enter your user id");
+          socket.emit("join",user_id);
+          $("#head").append("Welcome "+user_id);
+        });
+        // remove this function
+        socket.on("online_users",function(users){
+          var html='';
+          users.forEach(function(user){
+            if(user != name)
+            {
+              html+='<input type="checkbox" name="users" value="'+user+'">'+user+'</br>';
+            }
+          })
+          $("#users").html(html);
+        });
+
+        socket.on("Invite_user",function(orderID){
+          console.log(orderID);
+          // write the mesage context
+          //$("#notifications").append('you have invited to join '+orderID+'<button type="button" class="join" onclick="join()"> join </button><button type="button" class="cancel" onclick="cancel()"> cancel </button><br>');
+          $("#notifications").append('you have invited to join '+orderID+'<input type="button" value="true"/><input type="button"  value="false"/><br>');
+        });
+
+        socket.on("is_Recieved",function(isDone){
+          console.log(isDone);
+        });
+
+        $("#sendInvitation").click(function(){
+         $("input").each(function(){
+            if($(this).prop("checked"))
+            {
+              selctedUsers.push($(this).val());
+            }
+          });
+          socket.emit("notify",{orderID:"58e4e4f348433e4958d2c38f",users:selctedUsers});
+          selctedUsers=[];
+          alert("users notiefied");
+        });
+
+        function invitationResponse(value){
+          // passing orderid as param
+          console.log("reponse");
+          console.log(value);
+          // state true if user accepte invitation false for cancel
+          socket.emit("respondeInvitation",{orderID:"58e4e4f348433e4958d2c38f",notificationID:"58ebf04b06bf694d248d769c",state:value});
+          alert("user acccepted");
+        };
+
+        $(':input').click(function(event) {
+          console.log("in action");
+          var value=true;
+          console.log(value);
+          invitationResponse(value);
+        });
+        socket.on("accept_invitation",function(orderID){
+          // write the mesage context
+          $("#notifications").append('ahmed has acceptted the invitation to join <br>');
+        });
+
+        socket.on("reject_invitation",function(orderID){
+          // write the mesage context
+          $("#notifications").append('ahmed has rejected the invitation to join <br>');
+        });
+
+    });
+
+    </script>
+  </head>
+  <body>
+   <h1>Create Group</h1>
+   <h4 id="head"></h4>
+   <table>
+     <tr>
+       <td colspan="2"><h4>online users</h4></td>
+     </tr>
+
+   </table>
+    <div id="users">
+
+    </div>
+    <button type="button" id="sendInvitation">send invitation</button>
+    <h5> Recieved notifications </h5>
+    <div id="notifications">
+
+    </div>
+  </body>
+
+</html>
