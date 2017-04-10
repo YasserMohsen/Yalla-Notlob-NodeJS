@@ -8,7 +8,8 @@ var users = new Schema({
   password:String,
   avatar:String,
   friends:[{type:Schema.Types.ObjectId,ref:"users"}],
-  facebookId:String
+  facebookId:String,
+  googleId:String
 });
 
 mongoose.model("users",users);

@@ -31,6 +31,12 @@ var uploadFileMiddleware = multer({
 var facebookRouter = require("./facebook");
 router.use("/facebook",facebookRouter);
 //////////////////////************************FACEBOOK******************************////////////////////////
+
+//////////////////////************************GOOGLE******************************////////////////////////
+var facebookRouter = require("./google");
+router.use("/google",facebookRouter);
+//////////////////////************************GOOGLE******************************////////////////////////
+
 router.post("/login",postMiddleware,function(request,response){
   var email = validator.escape(request.body.email);
   var password = request.body.password;
@@ -39,8 +45,10 @@ router.post("/login",postMiddleware,function(request,response){
   }else{
     //check in DB
     mongoose.model("users").findOne({email:email},{password:true},function(err,user){
+      if(err || !user || user.password == 'undefined'){
+        response.json({loggedIn:false});
     // check bcrypt password ...
-      if(!err && user && bcrypt.compareSync(password,user.password)){
+      }else if(bcrypt.compareSync(password,user.password)){
         //jwt
         var user_token = {_id:user._id};
         jwt.sign(user_token,APP_SECRET,{algorithm:"HS256"},function(err,token){

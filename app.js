@@ -24,7 +24,7 @@ var orderRouter = require("./controllers/order");
 
 server.use(function(request,response,next){
   response.setHeader("X-XSS-Protection",1);
-  response.setHeader('Access-Control-Allow-Headers','Content-Type');
+  response.setHeader('Access-Control-Allow-Headers','Content-Type,authorization');
   response.setHeader("Access-Control-Allow-Origin","*");
   response.setHeader("Access-Control-Allow-Methods","GET,POST,PUT,DELETE");
   response.setHeader("Cache-Control","no-cache");

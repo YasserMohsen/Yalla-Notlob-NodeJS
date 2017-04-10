@@ -5,8 +5,8 @@ var router=express.Router();
 var jwt = require("jsonwebtoken");
 const APP_SECRET = "F@#e$!%w!&_q@#!z";
 //facebook identity
-const FACEBOOK_APP_ID = "";
-const FACEBOOK_APP_SECRET = "";
+const FACEBOOK_APP_ID = "a";
+const FACEBOOK_APP_SECRET = "a";
 //passport-facebook
 var passport = require("passport");
 var FacebookStrategy = require('passport-facebook').Strategy;
@@ -34,9 +34,10 @@ passport.use(new FacebookStrategy({
   function(accessToken, refreshToken, profile, done) {
     process.nextTick(function() {
       // find the user in the database based on their facebook id
+      var error = "ERROR";
       mongoose.model("users").findOne({ "facebookId" : profile.id }, function(err, user) {
         if (err)
-          return done(err);
+          return done(null, error);
           if (user) {
             return done(null, user);
           } else {
@@ -48,8 +49,7 @@ passport.use(new FacebookStrategy({
               if(!err){
                 return done(null, user);
               }else{
-                console.log(err);
-                throw err;
+                return done(null, error);
               }
             })
          }
@@ -62,6 +62,9 @@ router.get('/',passport.authenticate('facebook',{ scope: ['email'] }));
 router.get('/callback',
     passport.authenticate('facebook', { session:false }),
     function(req, res) {
+      if(!req.user._id){
+          res.json({loggedIn:false});
+      }
       // Successful authentication
       var user_token = {_id:req.user._id};
       console.log(user_token);
@@ -73,5 +76,4 @@ router.get('/callback',
           }
       });
 });
-router
 module.exports = router;
