@@ -1,5 +1,8 @@
 var express = require("express");
 var server = express();
+var http=require('http');
+var httpSERVER=http.createServer(server);
+var io=require('socket.io')(httpSERVER);//
 var fs = require("fs");
 var bodyParser = require("body-parser");
 //jwt
@@ -20,7 +23,7 @@ var authRouter = require("./controllers/auth");
 var userRouter = require("./controllers/user");
 var groupRouter = require("./controllers/group");
 var orderRouter = require("./controllers/order");
-// var notificationRouter = require("./controllers/notification");
+var notificationRouter = require("./controllers/notification")(httpSERVER);
 
 server.use(function(request,response,next){
   response.setHeader("X-XSS-Protection",1);
@@ -60,7 +63,7 @@ server.use(function(request,response,next){
 server.use("/user",userRouter);
 server.use("/group",groupRouter);
 server.use("/order",orderRouter);
-// server.use("/notification",notificationRouter);
+server.use("/notification",notificationRouter);
 
 //************example of populate "find" result*********************
 // server.get("/",function(request,response){
@@ -74,8 +77,7 @@ server.use("/order",orderRouter);
 //     response.json(data);
 //   })
 // })
-
-server.listen(8090);
+httpSERVER.listen(8090);
 // var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8090;
 // var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1';
 //
