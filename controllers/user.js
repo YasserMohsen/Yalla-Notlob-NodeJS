@@ -29,7 +29,7 @@ router.get("/",function(request,response){
   var joinedOrders=[];
   // change request.user_id
   var user_id="58e23831be011d1ac61542ad";
-  mongoose.model("users").findOne({_id:user_id},{_id:false,friends:true}).populate('friends').exec(function(err,userFriends){
+  mongoose.model("users").findOne({_id:request.user_id},{_id:false,friends:true}).populate('friends').exec(function(err,userFriends){
     if(!err){
       if(userFriends)
       {

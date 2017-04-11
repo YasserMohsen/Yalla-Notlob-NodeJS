@@ -9,7 +9,7 @@
       $(function(){
         var selctedUsers=[];
         var socket=io.connect("http://localhost:8090/");
-
+        // when login
         socket.on("connect",function(){
         user_id=prompt("enter your user id");
           socket.emit("join",user_id);
@@ -32,11 +32,16 @@
           // write the mesage context
           //$("#notifications").append('you have invited to join '+orderID+'<button type="button" class="join" onclick="join()"> join </button><button type="button" class="cancel" onclick="cancel()"> cancel </button><br>');
           $("#notifications").append('you have invited to join '+orderID+'<input type="button" value="true"/><input type="button"  value="false"/><br>');
+          var Num=$("#counter").val();
+          Num=parseInt(Num);
+          $("#counter").html(++Num);
         });
 
         socket.on("is_Recieved",function(isDone){
           console.log(isDone);
         });
+        // when click on not of type "text"
+        //socket.emit("updateToSeen",notificationID);
 
         $("#sendInvitation").click(function(){
          $("input").each(function(){
@@ -45,7 +50,7 @@
               selctedUsers.push($(this).val());
             }
           });
-          socket.emit("notify",{orderID:"58e4e4f348433e4958d2c38f",users:selctedUsers});
+          socket.emit("notify",{user_id:"58e235e67a12b018feb4d862",orderID:"58e4e4f348433e4958d2c38f",users:selctedUsers});
           selctedUsers=[];
           alert("users notiefied");
         });
@@ -55,8 +60,8 @@
           console.log("reponse");
           console.log(value);
           // state true if user accepte invitation false for cancel
-          socket.emit("respondeInvitation",{orderID:"58e4e4f348433e4958d2c38f",notificationID:"58ebf04b06bf694d248d769c",state:value});
-          alert("user acccepted");
+          notificationid=prompt("enter your notification id");
+          socket.emit("respondeInvitation",{user_id:"58e235e67a12b018feb4d862",orderID:"58e4e4f348433e4958d2c38f",notificationID:notificationid,state:"accepted"});
         };
 
         $(':input').click(function(event) {
@@ -65,6 +70,7 @@
           console.log(value);
           invitationResponse(value);
         });
+
         socket.on("accept_invitation",function(orderID){
           // write the mesage context
           $("#notifications").append('ahmed has acceptted the invitation to join <br>');
@@ -73,6 +79,11 @@
         socket.on("reject_invitation",function(orderID){
           // write the mesage context
           $("#notifications").append('ahmed has rejected the invitation to join <br>');
+        });
+        // when logout
+        $( window ).unload(function() {
+          var user_id="58e235e67a12b018feb4d862";
+          socket.emit("disconnect",user_id);
         });
 
     });
@@ -94,7 +105,7 @@
     <button type="button" id="sendInvitation">send invitation</button>
     <h5> Recieved notifications </h5>
     <div id="notifications">
-
+      <label for="notifications" id="counter">0</label>
     </div>
   </body>
 
