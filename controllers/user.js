@@ -28,29 +28,40 @@ router.get("/",function(request,response){
   var newOrders=[];
   var joinedOrders=[];
   // change request.user_id
-  var userID="58e23831be011d1ac61542ad";
-  mongoose.model("users").findOne({_id:request.user_id},{_id:false,friends:true}).populate('friends').exec(function(err,userFriends){
+  var user_id="58e23831be011d1ac61542ad";
+  mongoose.model("users").findOne({_id:user_id},{_id:false,friends:true}).populate('friends').exec(function(err,userFriends){
     if(!err){
       if(userFriends)
       {
         userFriends.friends.forEach(function(friend){
-          // find owned orders
+          // find owned orders  and joined orders for each user friend
           console.log(friend);
-          mongoose.model("orders").find({owner_id:friend._id},{},function(err,ownedOrders){
-            if(!err && ownedOrders)
+          mongoose.model("orders").find({},{},function(err,Orders){
+            if(!err)
             {
-              newOrders.push({friendInfo:friend,ownedOrders:ownedOrders});
+              if(Orders)
+              {
+                Orders.forEach(function(order){
+                  if(order.owner_id === friend._id)
+                  {
+                    newOrders.push({friendInfo:friend,ownedOrders:ownedOrders});
+                  }
+                  else if (order.joined_members.includes(friend._id))
+                   {
+                      joinedOrders.push({friendInfo:friend,joinedOrders:joinedOrders});
+                  }
+                });
+                    response.json({status:true,new_Orders:newOrders,joined_Orders:joinedOrders});
+              }
+              else {
+                  response.json({status:false,error:"No orders Found"});
+              }
             }
-          });
-          // find joined orders
-          mongoose.model("orders").find({joined_members:friend._id},{},function(err,joinedOrders){
-            if(!err && joinedOrders)
-            {
-              joinedOrders.push({friendInfo:friend,joinedOrders:joinedOrders});
+            else {
+              response.json({status:false,error:err});
             }
           });
         });
-        response.json({status:true,new_Orders:newOrders,joined_Orders:joinedOrders});
       }
       else {
         response.json({status:false,error:"No Friends Found"});
