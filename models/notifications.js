@@ -6,7 +6,7 @@ var notifications = new Schema({
   status:{type:Boolean,default:false}, //false = unread
   type:{type:String,required:true},
   text:{type:String},
-  time:Date,
+  time:{type:Date,default:Date.now},
   from:{type:Schema.Types.ObjectId,ref:"users",required:true},
   to:{type:Schema.Types.ObjectId,ref:"users",required:true}
 })

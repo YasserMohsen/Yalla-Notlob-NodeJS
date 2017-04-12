@@ -37,7 +37,7 @@ io.on("connection",function(socketClient){
     console.log(notify_object.orderID);
     var UserModel=mongoose.model("notifications");
     notify_object.users.forEach(function(user){
-    var notification=new UserModel({order_id:notify_object.orderID,type:"action",time:new Date(),from:notify_object.user_id,to:user});
+    var notification=new UserModel({order_id:notify_object.orderID,type:"action",from:notify_object.user_id,to:user});
     notification.save(function(err){
       if(!err)
       {
