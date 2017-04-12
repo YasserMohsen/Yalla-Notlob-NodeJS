@@ -102,55 +102,47 @@ router.post("/",postMiddleware,function(request,response){
     errors.push(" * Group Memebrs Required");
     isValid=false;
   }
-// RepeatedMembers in group
-      var RepeatedMemebers={};
-      for(let i = 0 ; i < request.body.members.length ; i++ ){
-          if( RepeatedMemebers.hasOwnProperty(request.body.members[i])){
-             RepeatedMemebers[request.body.members[i]] += 1;
-          }else{
-            RepeatedMemebers[request.body.members[i]] = 0;
-          }
+  // reject RepeatedMembers in group
+  var RepeatedMemebers={};
+  for(let i = 0 ; i < request.body.members.length ; i++ ){
+      if( RepeatedMemebers.hasOwnProperty(request.body.members[i])){
+         RepeatedMemebers[request.body.members[i]] += 1;
+      }else{
+        RepeatedMemebers[request.body.members[i]] = 0;
       }
-      // var RepeatedMemebers={};
-      // for(var i = request.body.members.length;i<0; i--){
-      //   RepeatedMemebers[request.body.members[i]] = 0;
-      // }
-      // console.log(RepeatedMemebers)
-
-      // request.body.members.forEach(function(member){
-      //   RepeatedMemebers[member]+=1;
-      // });
-      console.log(RepeatedMemebers);
-
-      for(let i = 0 ; i < request.body.members.length ; i++ ){
-        if(RepeatedMemebers[request.body.members[i]]>0){
-          console.log('repeated member');
-          errors.push(" * Repeated Group Member");
-          isValid=false;
-          break
-        };
-      }
-      // request.body.members.forEach(function(member){
-      //   console.log(RepeatedMemebers[member],member)
-      //   if(RepeatedMemebers[member]>0){
-      //     console.log('repeated member');
-      //     errors.push(" * Repeated Group Member");
-      //     isValid=false;
-      //   };
-      // });
+  }
+  for(let i = 0 ; i < request.body.members.length ; i++ ){
+    if(RepeatedMemebers[request.body.members[i]]>0){
+      console.log('repeated member');
+      errors.push(" * Repeated Group Member");
+      isValid=false;
+      break
+    };
+  }
   if(isValid)
   {
     var groupName=validator.escape(request.body.group_name);
-    var UserModel=mongoose.model("groups");
-    var group=new UserModel({name:groupName,owner_id:request.user_id,members:request.body.members});
-    group.save(function(err){
-        if(!err){
-          response.json({status:true,newGroup:group});
+    //validate duplicated owned group name
+    mongoose.model('groups').find({name:groupName,owner_id:request.user_id},{},function(err,output){
+      if(err){
+        response.json({status:false,error:err});
+      }else{
+        if(output){
+            response.json({status:false,error:["Duplicated owned group name"]});
+        }else{
+            var UserModel=mongoose.model("groups");
+            var group=new UserModel({name:groupName,owner_id:request.user_id,members:request.body.members});
+            group.save(function(err){
+                if(!err){
+                  response.json({status:true,newGroup:group});
+                }
+                else {
+                  response.json({status:false,error:err});
+                }
+            });
         }
-        else {
-          response.json({status:false,error:err});
-        }
-      });
+      }
+    })
    }else{
     response.json({status:false,error:errors});
    }
