@@ -55,7 +55,7 @@ router.post("/login",postMiddleware,function(request,response){
         var user_token = {_id:user._id};
         jwt.sign(user_token,APP_SECRET,{algorithm:"HS256"},function(err,token){
             if(!err){
-                response.json({loggedIn:true,data:{name:user.name},access_token:token});
+                response.json({loggedIn:true,data:{name:user.name},id:user._id,access_token:token});
             }else{
                 response.json({loggedIn:false});
             }
