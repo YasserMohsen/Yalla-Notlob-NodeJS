@@ -39,6 +39,7 @@ server.use(function(request,response,next){
     response.send('true');
   }  
 })
+server.use(express.static('public'))
 // add to accept json in request body
 server.use(bodyParser.json());
 //use routers
