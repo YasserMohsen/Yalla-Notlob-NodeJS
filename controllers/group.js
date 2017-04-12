@@ -97,12 +97,47 @@ router.post("/",postMiddleware,function(request,response){
     isValid=false;
   }
 
-  if (request.body.members.length == 0  && !(isArray(request.body.members)))
+  if (request.body.members &&  !(isArray(request.body.members)) && request.body.members.length == 0 )
   {
     errors.push(" * Group Memebrs Required");
     isValid=false;
   }
+// RepeatedMembers in group
+      var RepeatedMemebers={};
+      for(let i = 0 ; i < request.body.members.length ; i++ ){
+          if( RepeatedMemebers.hasOwnProperty(request.body.members[i])){
+             RepeatedMemebers[request.body.members[i]] += 1;
+          }else{
+            RepeatedMemebers[request.body.members[i]] = 0;
+          }
+      }
+      // var RepeatedMemebers={};
+      // for(var i = request.body.members.length;i<0; i--){
+      //   RepeatedMemebers[request.body.members[i]] = 0;
+      // }
+      // console.log(RepeatedMemebers)
 
+      // request.body.members.forEach(function(member){
+      //   RepeatedMemebers[member]+=1;
+      // });
+      console.log(RepeatedMemebers);
+
+      for(let i = 0 ; i < request.body.members.length ; i++ ){
+        if(RepeatedMemebers[request.body.members[i]]>0){
+          console.log('repeated member');
+          errors.push(" * Repeated Group Member");
+          isValid=false;
+          break
+        };
+      }
+      // request.body.members.forEach(function(member){
+      //   console.log(RepeatedMemebers[member],member)
+      //   if(RepeatedMemebers[member]>0){
+      //     console.log('repeated member');
+      //     errors.push(" * Repeated Group Member");
+      //     isValid=false;
+      //   };
+      // });
   if(isValid)
   {
     var groupName=validator.escape(request.body.group_name);
@@ -116,6 +151,8 @@ router.post("/",postMiddleware,function(request,response){
           response.json({status:false,error:err});
         }
       });
+   }else{
+    response.json({status:false,error:errors});
    }
 });
 
