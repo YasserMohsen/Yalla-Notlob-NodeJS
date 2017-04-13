@@ -69,10 +69,25 @@ io.on("connection",function(socketClient){
 // *********** routes ***********
 
 router.get("/",function(request,response){
-  mongoose.model("notifications").find({to:request.user_id}).sort({time:-1}).populate('to','name').populate('from','name').populate('order_id','name').limit(5).exec(function(err,userNotifications){
+  mongoose.model("notifications").find({to:request.user_id}).sort({time:-1}).populate('to','name').populate('from','name').populate('order_id','name').exec(function(err,userNotifications){
     if (!err)
     {
-      response.json({status:true,Notifications:userNotifications});
+      if(userNotifications)
+      {
+        var numberOfNotifications=0;
+        console.log(userNotifications)
+        userNotifications.forEach(function(notification){
+          if(notification.status === false)
+          {
+            ++numberOfNotifications;
+          }
+        });
+        console.log(numberOfNotifications);
+        response.json({status:true,Notifications:userNotifications.slice(0, 5),numberOfnotifications:numberOfNotifications});
+      }
+      else {
+        response.json({status:false,error:"no notifications"});
+      }
     }
     else {
       response.json({status:false,error:err});
@@ -133,7 +148,20 @@ router.post("/",postMiddleware,function(request,response){
     response.json({status:false,error:"check empty inputs"});
   }
 });
+// update user notifications to seen
+router.put("/",function(request,response){
+  mongoose.model("notifications").update({to:request.user_id,status:false},{$set:{status:true}},{multi:true},function(err){
+    if(!err)
+    {
+      response.json({status:true});
+    }
+    else {
+      response.json({status:false,error:err});
+    }
+  });
+});
 
+// update user notification state
 router.put("/:notificationID",postMiddleware,function(){
   if(request.params.notificationID)
   {
@@ -144,7 +172,7 @@ router.put("/:notificationID",postMiddleware,function(){
     else {
       state="canceled"
     }
-    mongoose.model("notifications").update({_id:request.params.notificationID},{$set:{status:true,type:"text",text:state}},function(err){
+    mongoose.model("notifications").update({_id:request.params.notificationID},{$set:{type:"text",text:state}},function(err){
       if(!err)
       {
         response.json({status:true});

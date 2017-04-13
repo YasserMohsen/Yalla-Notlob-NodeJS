@@ -32,14 +32,14 @@ server.use(function(request,response,next){
   response.setHeader("Access-Control-Allow-Origin","*");
   response.setHeader("Access-Control-Allow-Methods","GET,POST,PUT,DELETE");
   response.setHeader("Cache-Control","no-cache");
-  
+
   if(request.method != 'OPTIONS'){
     next();
     console.log('is optins req')
   }else{
     response.status(200);
     response.send('true');
-  }  
+  }
 })
 server.use(express.static('public'))
 // add to accept json in request body
