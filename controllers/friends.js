@@ -32,13 +32,14 @@ else {
 });
 
 router.put("/:friendID",postMiddleware,function(request,response){
+  console.log(request.params.friendID , 'test')
   if (request.params.friendID != request.user_id)
   {
     mongoose.model("users").findOne({_id:request.params.friendID},{},function(err,friend){
       if(!err && friend)
       {
         mongoose.model("users").findOne({_id:request.user_id},{_id:false,friends:true},function(err,userFriends){
-          if(!userFriends.friends.includes(request.params.friendID))
+          if(userFriends && !(userFriends.friends.indexOf(request.params.friendID) > -1))
           {
             mongoose.model("users").update({_id:request.user_id},{$push:{friends:request.params.friendID}},function(err,user){
               if(!err)
@@ -68,7 +69,7 @@ router.delete("/:friendID",function(request,response){
   if(request.params.friendID)
   {
     mongoose.model("users").findOne({_id:request.user_id},{_id:false,friends:true},function(err,userFriends){
-      if(userFriends.friends.includes(request.params.friendID))
+      if(userFriends && userFriends.friends.indexOf(request.params.friendID) > -1)
       {
           mongoose.model("users").update({_id:request.user_id},{$pull:{friends:request.params.friendID}},function(err){
           if(!err){

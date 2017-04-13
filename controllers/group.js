@@ -97,25 +97,55 @@ router.post("/",postMiddleware,function(request,response){
     isValid=false;
   }
 
-  if (request.body.members.length == 0  && !(isArray(request.body.members)))
+  if (request.body.members &&  !(isArray(request.body.members)) && request.body.members.length == 0 )
   {
     errors.push(" * Group Memebrs Required");
     isValid=false;
   }
-
+  // reject RepeatedMembers in group
+  var RepeatedMemebers={};
+  for(let i = 0 ; i < request.body.members.length ; i++ ){
+      if( RepeatedMemebers.hasOwnProperty(request.body.members[i])){
+         RepeatedMemebers[request.body.members[i]] += 1;
+      }else{
+        RepeatedMemebers[request.body.members[i]] = 0;
+      }
+  }
+  for(let i = 0 ; i < request.body.members.length ; i++ ){
+    if(RepeatedMemebers[request.body.members[i]]>0){
+      console.log('repeated member');
+      errors.push(" * Repeated Group Member");
+      isValid=false;
+      break
+    };
+  }
   if(isValid)
   {
     var groupName=validator.escape(request.body.group_name);
-    var UserModel=mongoose.model("groups");
-    var group=new UserModel({name:groupName,owner_id:request.user_id,members:request.body.members});
-    group.save(function(err){
-        if(!err){
-          response.json({status:true,newGroup:group});
+    //validate duplicated owned group name
+    mongoose.model('groups').find({name:groupName,owner_id:request.user_id},{},function(err,output){
+      if(err){
+        response.json({status:false,error:err});
+      }else{
+        if(output.length != 0 ){
+          console.log(output,'output')
+            response.json({status:false,error:["Duplicated owned group name"]});
+        }else{
+            var UserModel=mongoose.model("groups");
+            var group=new UserModel({name:groupName,owner_id:request.user_id,members:request.body.members});
+            group.save(function(err){
+                if(!err){
+                  response.json({status:true,newGroup:group});
+                }
+                else {
+                  response.json({status:false,error:err});
+                }
+            });
         }
-        else {
-          response.json({status:false,error:err});
-        }
-      });
+      }
+    })
+   }else{
+    response.json({status:false,error:errors});
    }
 });
 

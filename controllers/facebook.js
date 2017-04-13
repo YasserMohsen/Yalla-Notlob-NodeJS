@@ -72,7 +72,7 @@ router.get('/callback',
       console.log(user_token);
       jwt.sign(user_token,APP_SECRET,{algorithm:"HS256"},function(err,token){
           if(!err){
-              res.json({loggedIn:true,data:{name:req.user.name},access_token:token});
+              res.json({loggedIn:true,data:{name:req.user.name,id:req.user._id},access_token:token});
           }else{
               res.json({loggedIn:false});
           }

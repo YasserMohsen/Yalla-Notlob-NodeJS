@@ -6,7 +6,7 @@ var jwt = require("jsonwebtoken");
 const APP_SECRET = "F@#e$!%w!&_q@#!z";
 //facebook identity
 const GOOGLE_CLIENT_ID = "500978717561-shm3hfs962b3bgs6aeshv7t67lib7e2m.apps.googleusercontent.com";
-const GOOGLE_CLIENT_SECRET = "G7eY-b9iQudJSSVhaKA9eGJM";
+const GOOGLE_CLIENT_SECRET = "qRKaOWQrHu7JdIShBrQ41hmc";
 
 var passport = require('passport');
 var GoogleStrategy = require( 'passport-google-oauth2' ).Strategy;
@@ -73,7 +73,7 @@ router.get('/callback',
         var user_token = {_id:req.user._id};
         jwt.sign(user_token,APP_SECRET,{algorithm:"HS256"},function(err,token){
             if(!err){
-                res.json({loggedIn:true,data:{name:req.user.name},access_token:token});
+                res.json({loggedIn:true,data:{name:req.user.name,id:req.user._id},access_token:token});
             }else{
                 res.json({loggedIn:false});
             }
