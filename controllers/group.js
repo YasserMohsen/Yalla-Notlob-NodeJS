@@ -27,7 +27,21 @@ router.get("/",function(request,response){
     }
   });
 });
-
+router.get("/:id",function(request,response){
+    mongoose.model("groups").findById(request.params.id).populate({path:'members'}).exec(function(err,group){
+    if(err)
+    {
+      response.json({status:false,error:"retrieve error"});
+    }
+    else {
+      if(!group){
+        response.json({status:false,error:"not found group id"});
+      }else{
+        response.json({status:true,group:group})
+      }
+    }
+  });
+});
 router.post("/AddMember",postMiddleware,function(request,response){
   var isValid=true;
   var errors=[];
