@@ -9,14 +9,20 @@ router.get("/",function(request,response){
 if(request.user_id)
 {
   mongoose.model("users").findOne({_id:request.user_id},{friends:true},function(err,userFriends){
-    if(!err && userFriends)
+    if(!err)
     {
-      mongoose.model("users").populate(userFriends,{path:'friends'},function(err,user_friends){
-        response.json({status:true,friends:user_friends});
-      });
+      if(userFriends)
+      {
+        mongoose.model("users").populate(userFriends,{path:'friends'},function(err,user_friends){
+          response.json({status:true,friends:user_friends});
+        });
+      }
+      else {
+        response.json({status:false,error:"No Friends"});
+      }
     }
     else {
-      response.json({status:false,error:"No Friends"});
+      response.json({status:false,error:err});
     }
   });
 }

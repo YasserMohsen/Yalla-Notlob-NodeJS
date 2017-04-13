@@ -127,7 +127,8 @@ router.post("/",postMiddleware,function(request,response){
       if(err){
         response.json({status:false,error:err});
       }else{
-        if(output){
+        if(output.length != 0 ){
+          console.log(output,'output')
             response.json({status:false,error:["Duplicated owned group name"]});
         }else{
             var UserModel=mongoose.model("groups");

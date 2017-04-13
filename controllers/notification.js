@@ -1,107 +1,41 @@
 module.exports= function (httpSERVER){
 var express=require('express');
 var server = express();
+var isArray=require('validate.io-array');
 var http=require('http');
 var io=require('socket.io')(httpSERVER);
 var jwt = require("jsonwebtoken");
 const APP_SECRET = "F@#e$!%w!&_q@#!z";
 var mongoose=require("mongoose");
 var validator = require("validator");
+var bodyParser=require('body-parser');
+var postMiddleware=bodyParser.urlencoded({extended:false});
 var router=express.Router();
+
+// *********** socket functions ***********
 var OnlineUsers={};
 
 io.on("connection",function(socketClient){
-  // passe accessToken not user id
-  socketClient.on("join",function(user_id){
-    /*var user_id;
+
+  socketClient.on("join",function(accessToken){
+   var user_id;
    jwt.verify(accessToken,APP_SECRET,function(err,decoded){
        if(!err){
           user_id=decoded._id;
        }
-     });*/
-   OnlineUsers[user_id]=socketClient;
-   Object.keys(OnlineUsers).forEach(function(key){
-      OnlineUsers[key].emit("online_users",Object.keys(OnlineUsers));
-    });
-  });
-  // passe accessToken not user id
-  socketClient.on("notify",function(notify_object){
-    /*var user_id;
-   jwt.verify(notify_object.accessToken,APP_SECRET,function(err,decoded){
-       if(!err){
-          user_id=decoded._id;
-       }
-     });*/
-    var status;
-    console.log(notify_object.users.length);
-    console.log(notify_object.orderID);
-    var UserModel=mongoose.model("notifications");
-    notify_object.users.forEach(function(user){
-    var notification=new UserModel({order_id:notify_object.orderID,type:"action",from:notify_object.user_id,to:user});
-    notification.save(function(err){
-      if(!err)
-      {
-        Object.keys(OnlineUsers).forEach(function(id){
-          if(id==user)
-          {
-              OnlineUsers[user].emit("Invite_user",notify_object.orderID);
-              status=true;
-              OnlineUsers[user].emit("is_Recieved",status);
-          }
-        });
-      }
-      else {
-        status=false;
-        OnlineUsers[user].emit("is_Recieved",status);
-      }
      });
-   });
- });
-
- socketClient.on("respondeInvitation",function(notify_object){
-   console.log("in accept");
-   var status;
-   // user name who acceptted the invitation
-   var owner="58e235e67a12b018feb4d862";
-  // mongoose.model("orders").findOne({_id:notify_object.orderID},{},function(err,order){
-    // if(!err)
-     //{
-        var UserModel=mongoose.model("notifications");
-        var notification=new UserModel({order_id:notify_object.orderID,type:"text",text:notify_object.state,time:new Date(),from:notify_object.user_id,to:owner});
-        notification.save(function(err){
-            if(!err){
-                if(OnlineUsers[owner])
-                {
-                    if(notify_object.state === "accepted")
-                    {
-                      OnlineUsers[owner].emit("accept_invitation",notify_object.orderID);
-                    }
-                    else {
-                      OnlineUsers[owner].emit("reject_invitation",notify_object.orderID);
-                    }
-                    OnlineUsers[owner].emit("is_Recieved",{status:true,error:"message send to user"});
-                }
-              var state='';
-              if(notify_object.state === "accepted"){
-                state="joined"
-              }
-              else {
-                state="canceled"
-              }
-              mongoose.model("notifications").update({_id:notify_object.notificationID},{$set:{status:true,type:"text",text:state}},function(err){
-                if(!err)
-                {
-                  OnlineUsers[owner].emit("is_Recieved",{status:true,error:" notification updated"});
-                }
-              });
-            }
-            else {
-              OnlineUsers[owner].emit("is_Recieved",{status:false,error:err});
-            }
-        });
-     //}
-  //  });
+   OnlineUsers[user_id]=socketClient;
   });
+
+
+  socketClient.on("notify",function(members){
+    if(members && isArray(members))
+    {
+      members.forEach(function(member){
+           OnlineUsers[member].emit("notify_user",true);
+      });
+    }
+ });
 
   socketClient.on("updateToSeen",function(notificationID){
     if(notificationID)
@@ -120,20 +54,40 @@ io.on("connection",function(socketClient){
     }
   });
 
-  socketClient.on("disconnect",function(user_id){
+  socketClient.on("disconnect",function(accessToken){
+    var user_id;
+    jwt.verify(accessToken,APP_SECRET,function(err,decoded){
+        if(!err){
+           user_id=decoded._id;
+        }
+     });
     delete OnlineUsers[user_id];
     console.log(Object.keys(OnlineUsers));
   });
-
 });
 
+// *********** routes ***********
+
 router.get("/",function(request,response){
-  // change request.user_id
-  var userID="58e235e67a12b018feb4d862";
-  mongoose.model("notifications").find({to:userID}).sort({time:-1}).populate('to','name').populate('from','name').populate('order_id','name').limit(5).exec(function(err,userNotifications){
+  mongoose.model("notifications").find({to:request.user_id}).sort({time:-1}).populate('to','name').populate('from','name').populate('order_id','name').exec(function(err,userNotifications){
     if (!err)
     {
-      response.json({status:true,Notifications:userNotifications});
+      if(userNotifications)
+      {
+        var numberOfNotifications=0;
+        console.log(userNotifications)
+        userNotifications.forEach(function(notification){
+          if(notification.status === false)
+          {
+            ++numberOfNotifications;
+          }
+        });
+        console.log(numberOfNotifications);
+        response.json({status:true,Notifications:userNotifications.slice(0, 5),numberOfnotifications:numberOfNotifications});
+      }
+      else {
+        response.json({status:false,error:"no notifications"});
+      }
     }
     else {
       response.json({status:false,error:err});
@@ -142,9 +96,7 @@ router.get("/",function(request,response){
 });
 
 router.get("/viewall",function(request,response){
-  // change request.user_id
-  var userID="58e235e67a12b018feb4d862";
-  mongoose.model("notifications").find({to:userID}).sort({time:-1}).populate('to','name').populate('from','name').populate('order_id','name').exec(function(err,userNotifications){
+  mongoose.model("notifications").find({to:request.user_id}).sort({time:-1}).populate('to','name').populate('from','name').populate('order_id','name').exec(function(err,userNotifications){
     if (!err)
     {
       response.json({status:true,Notifications:userNotifications});
@@ -154,5 +106,86 @@ router.get("/viewall",function(request,response){
     }
   });
 });
+
+router.post("/",postMiddleware,function(request,response){
+  if( request.body.type && request.body.orderID && request.body.members.length != 0  && isArray(request.body.members) )
+  {
+    var status=true;
+    var UserModel=mongoose.model("notifications");
+    if (request.body.type === "action")
+    {
+      request.body.members.forEach(function(member){
+      var notification=new UserModel({order_id:request.body.orderID,type:request.body.type,time:new Date(),from:request.user_id,to:member});
+      notification.save(function(err){
+        if(err)
+        {
+          status=false;
+        }
+       });
+     });
+    }
+    else {
+      mongoose.model("orders").findOne({_id:request.body.orderID},{},function(err,order){
+         if(!err)
+         {
+            var notification=new UserModel({order_id:request.body.orderID,type:"text",text:request.body.state,time:new Date(),from:request.user_id,to:order.owner_id});
+            notification.save(function(err){
+                if(!err){
+                  status=true;
+                }
+                else {
+                  status=false;
+                }
+            });
+         }else {
+           status=false;
+         }
+      });
+    }
+  response.json({status:status});
+  }
+  else {
+    response.json({status:false,error:"check empty inputs"});
+  }
+});
+// update user notifications to seen
+router.put("/",function(request,response){
+  mongoose.model("notifications").update({to:request.user_id,status:false},{$set:{status:true}},{multi:true},function(err){
+    if(!err)
+    {
+      response.json({status:true});
+    }
+    else {
+      response.json({status:false,error:err});
+    }
+  });
+});
+
+// update user notification state
+router.put("/:notificationID",postMiddleware,function(){
+  if(request.params.notificationID)
+  {
+    var state='';
+    if(request.body.state === "accepted"){
+      state="joined"
+    }
+    else {
+      state="canceled"
+    }
+    mongoose.model("notifications").update({_id:request.params.notificationID},{$set:{type:"text",text:state}},function(err){
+      if(!err)
+      {
+        response.json({status:true});
+      }
+      else {
+        response.json({status:false,error:err});
+      }
+    });
+  }
+  else {
+    response.json({status:false,error:"notificationID Required"});
+  }
+});
+
 return router;
 }
