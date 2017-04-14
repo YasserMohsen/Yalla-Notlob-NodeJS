@@ -37,7 +37,10 @@ io.on("connection",function(socketClient){
     if(members && isArray(members))
     {
       members.forEach(function(member){
-           OnlineUsers[member].emit("notify_user",true);
+        console.log("member : " + member);
+        if(OnlineUsers[member]){
+           OnlineUsers[member].emit("notify_user","true");
+         }
       });
     }
  });
@@ -119,7 +122,8 @@ router.get("/viewall",function(request,response){
 });
 
 router.post("/",postMiddleware,function(request,response){
-  if( request.body.type && request.body.orderID && request.body.members.length != 0  && isArray(request.body.members) )
+  // && request.body.members.length != 0  && isArray(request.body.members) )
+  if( request.body.type && request.body.orderID)
   {
     var status=true;
     var UserModel=mongoose.model("notifications");
@@ -173,7 +177,7 @@ router.put("/",function(request,response){
 });
 
 // update user notification state
-router.put("/:notificationID",postMiddleware,function(){
+router.put("/:notificationID",postMiddleware,function(request,response){
   if(request.params.notificationID)
   {
     var state='';

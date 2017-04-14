@@ -43,6 +43,10 @@ router.get("/activity",function(request,response){
                 var joinedOrders=[];
                 Orders.forEach(function(order){
                   userFriends.friends.forEach(function(friend){
+                    console.log("friend");
+                    console.log(friend);
+                    console.log(order.owner_id);
+                    console.log(friend._id);
                     if(String(order.owner_id) === String(friend._id))
                     {
                         newOrders.push({friendInfo:friend,ownedOrder:order,date:order.date});
