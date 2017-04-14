@@ -9,7 +9,7 @@ var mongoose = require("mongoose");
 //GET owned and invited orders ...
 router.get("/",function(request,response){
   mongoose.model("orders").find({},{meals:false}).populate('invited_group').exec(function(err,orders){
-    console.log("ORDERS: "+orders);
+    // console.log("ORDERS: "+orders);
     if(!err && orders){
         var owned_orders = [];
         var invited_user_orders = [];
