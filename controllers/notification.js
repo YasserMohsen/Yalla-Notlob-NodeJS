@@ -17,18 +17,23 @@ var OnlineUsers={};
 
 io.on("connection",function(socketClient){
 
-  socketClient.on("join",function(accessToken){
-   var user_id;
-   jwt.verify(accessToken,APP_SECRET,function(err,decoded){
-       if(!err){
-          user_id=decoded._id;
-       }
-     });
-   OnlineUsers[user_id]=socketClient;
+  socketClient.on("join",function(user_id){
+  //  var user_id;
+  //  jwt.verify(accessToken,APP_SECRET,function(err,decoded){
+  //      if(!err){
+  //         user_id=decoded._id;
+          // console.log("jwt verified");
+          OnlineUsers[user_id]=socketClient;
+          console.log("Online users hashmap: ");
+          console.log(Object.keys(OnlineUsers));
+    //    }
+    //  });
   });
 
 
   socketClient.on("notify",function(members){
+    console.log("ON NOTIFY");
+    console.log(OnlineUsers);
     if(members && isArray(members))
     {
       members.forEach(function(member){
@@ -54,14 +59,19 @@ io.on("connection",function(socketClient){
     }
   });
 
-  socketClient.on("disconnect",function(accessToken){
-    var user_id;
-    jwt.verify(accessToken,APP_SECRET,function(err,decoded){
-        if(!err){
-           user_id=decoded._id;
-        }
-     });
+  socketClient.on("logout",function(user_id){
+    // var user_id;
+    // jwt.verify(accessToken,APP_SECRET,function(err,decoded){
+    //     if(!err){
+    //        user_id=decoded._id;
+    //     }
+    //  });
+    console.log("NOW")
+    console.log("user id: "+user_id)
+    console.log(Object.keys(OnlineUsers))
+    console.log(OnlineUsers[user_id])
     delete OnlineUsers[user_id];
+    console.log("Online users after disconnect hashmap: ");
     console.log(Object.keys(OnlineUsers));
   });
 });
@@ -69,7 +79,7 @@ io.on("connection",function(socketClient){
 // *********** routes ***********
 
 router.get("/",function(request,response){
-  mongoose.model("notifications").find({to:request.user_id}).sort({time:-1}).populate('to','name').populate('from','name').populate('order_id','name').exec(function(err,userNotifications){
+  mongoose.model("notifications").find({to:request.user_id}).sort({time:-1}).populate('to','name').populate('from','name').populate({path:'order_id',select:'name restaurant'}).exec(function(err,userNotifications){
     if (!err)
     {
       if(userNotifications)
@@ -83,6 +93,7 @@ router.get("/",function(request,response){
           }
         });
         console.log(numberOfNotifications);
+
         response.json({status:true,Notifications:userNotifications.slice(0, 5),numberOfnotifications:numberOfNotifications});
       }
       else {

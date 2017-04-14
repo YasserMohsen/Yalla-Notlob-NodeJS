@@ -10,11 +10,13 @@ var fs = require('fs');
 //GET owned and invited orders ...
 router.get("/",function(request,response){
   mongoose.model("orders").find({},{meals:false}).populate('invited_group').exec(function(err,orders){
-    if(!err){
+    // console.log("ORDERS: "+orders);
+    if(!err && orders){
         var owned_orders = [];
         var invited_user_orders = [];
         var invited_group_orders = [];
-        orders.forEach(function(order){
+        for(var i = 0;i<orders.length;i++){
+            order = orders[i]
             if(String(order.owner_id) === request.user_id){
                 console.log("owner");
                 owned_orders.push(order);
@@ -25,7 +27,7 @@ router.get("/",function(request,response){
                 console.log("group invited");
                 invited_group_orders.push(order);
             }
-        });
+        };
         invited_orders = invited_user_orders.concat(invited_group_orders);
         response.json({status:true,owned_orders:owned_orders,invited_orders:invited_orders});
     }else{
