@@ -65,6 +65,7 @@ router.post("/",postMiddleware,function(request,response){
   // var menu = validator.escape(request.body.menu);
   var invited_id = validator.escape(request.body.invited_id || '');
   var invited_type = validator.escape(request.body.invited_type || '');
+  var base64image = request.body.profile || '';
   // var invited_id = "58e6cfa0b85cdd420ad62434";
   // var invited_type = "user";
   //******************validation*******************************
@@ -81,6 +82,23 @@ router.post("/",postMiddleware,function(request,response){
   if(!validator.isLength(invited_id,24)){
     errors.push("Please invite a friend or a group of friends");
   }
+
+  //4.validate image
+  var matches = base64image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/) || [];
+  if(matches.length != 3){
+    errors.push("Invalid Image");
+  }else{
+    var ext = matches[1];
+    var e = ext.split('/')[1];
+    console.log('EXT: ' + e)
+    console.log(e !== "png" || e !== "jpg")
+
+    if(e !== "png" && e !== "jpg" && e !== "jpeg"){
+      errors.push("Invalid Image extension");
+    }
+    var data = matches[2];
+  }
+
   //***********************************************************
   if(invited_type === "group" || invited_type === "user"){
     mongoose.model(invited_type+"s").findOne({"_id":invited_id},function(err,result){
@@ -89,39 +107,22 @@ router.post("/",postMiddleware,function(request,response){
           response.json({status:false,errors:errors});
       }else{
           //prepare the order to save
-          var orderModel = mongoose.model("orders");
-          var orderObject = {owner_id:request.user_id,name:name,restaurant:restaurant};
-          orderObject["invited_"+invited_type] = invited_id;
-          //validate this user to add this friend or group
-          if(invited_type === "group"){
-              if(String(result.owner_id) !== request.user_id){
-                  errors.push("Invalid invited group");
-                  response.json({status:false,errors:errors});
-              }else{
-                  //save in database
-                  var order = new orderModel(orderObject);
-                  order.save(function(err,new_order){
-                      if(!err){
-                        response.json({status:true,order:new_order});
-                      }else{
-                        console.log(err);
-                        response.json({status:false,errors:["System Error! Come back later"]});
-                      }
-                  })
-              }
-          }else{
-              mongoose.model("users").findOne({_id:request.user_id},function(err,user){
-                  if(!err && user){
-                      if(user.friends.indexOf(invited_id) < 0){
-                          errors.push("Invalid invited friend");
-                      }
-                  }else{
-                      errors.push("logged user not found");
-                  }
-                  if(errors.length > 0){
+          //upload image
+          var buf = new Buffer(data, 'base64');
+          var imageName = "pic" + Math.floor(Math.random()*(100000)) + "_" + (+new Date())+'.'+e;
+          fs.writeFile('public/menus/'+imageName, buf, function(err){
+            if(!err)
+            {
+              var orderModel = mongoose.model("orders");
+              var orderObject = {owner_id:request.user_id,name:name,restaurant:restaurant,menu:"menus/"+imageName};
+              orderObject["invited_"+invited_type] = invited_id;
+              //validate this user to add this friend or group
+              if(invited_type === "group"){
+                  if(String(result.owner_id) !== request.user_id){
+                      errors.push("Invalid invited group");
                       response.json({status:false,errors:errors});
                   }else{
-                      //save order in database
+                      //save in database
                       var order = new orderModel(orderObject);
                       order.save(function(err,new_order){
                           if(!err){
@@ -132,11 +133,38 @@ router.post("/",postMiddleware,function(request,response){
                           }
                       })
                   }
-              })
-          }
+              }else{
+                  mongoose.model("users").findOne({_id:request.user_id},function(err,user){
+                      if(!err && user){
+                          if(user.friends.indexOf(invited_id) < 0){
+                              errors.push("Invalid invited friend");
+                          }
+                      }else{
+                          errors.push("logged user not found");
+                      }
+                      if(errors.length > 0){
+                          response.json({status:false,errors:errors});
+                      }else{
+                          //save order in database
+                          var order = new orderModel(orderObject);
+                          order.save(function(err,new_order){
+                              if(!err){
+                                response.json({status:true,order:new_order});
+                              }else{
+                                console.log(err);
+                                response.json({status:false,errors:["System Error! Come back later"]});
+                              }
+                          })
+                      }
+                  })
+              }
+            }
+            else {
+                response.json({status:false,errors:[" you are not invited to that order"]});
+            }
+          });
       }
-
-    })
+  });
   }else{
     errors.push("Invalid group or friend");
     response.json({status:false,errors:errors});
@@ -195,7 +223,6 @@ router.post("/:id/meal",postMiddleware,function(request,response){
     var price = validator.escape(request.body.price);
     var amount = validator.escape(request.body.amount) || "1";
     var comment = validator.escape(request.body.comment);
-    var base64image = request.body.profile || '';
     //******************validation*******************************
     var errors = [];
     //1.validate item name
@@ -213,21 +240,6 @@ router.post("/:id/meal",postMiddleware,function(request,response){
     if((amount * 1) <= 0 || !Number.isInteger(amount * 1)){
         errors.push("Invalid amount");
     }
-    //4.validate image
-    var matches = base64image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/) || [];
-    if(matches.length != 3){
-      errors.push("Invalid Image");
-    }else{
-      var ext = matches[1];
-      var e = ext.split('/')[1];
-      console.log('EXT: ' + e)
-      console.log(e !== "png" || e !== "jpg")
-
-      if(e !== "png" && e !== "jpg" && e !== "jpeg"){
-        errors.push("Invalid Image extension");
-      }
-      var data = matches[2];
-    }
     if(errors.length > 0) response.json({status:false,errors:errors});
     //***********************************************************
     mongoose.model("orders").findById(request.params.id).exec(function(err,order){
@@ -235,14 +247,8 @@ router.post("/:id/meal",postMiddleware,function(request,response){
             response.json({status:false,errors:["System Error! Come back later"]});
         }else{
             if(order){
-              //upload image
-              var buf = new Buffer(data, 'base64');
-              var imageName = "pic" + Math.floor(Math.random()*(100000)) + "_" + (+new Date())+'.'+e;
-              fs.writeFile('public/profile/'+imageName, buf, function(err){
-                if(!err)
-                {
                   if(order.owner_id === request.user_id || (typeof order.joined_members !== 'undefined' && (order.joined_members.indexOf(request.user_id) > -1))){
-                      var meal = {user_id:request.user_id,item:item,price:price,amount:amount,comment:comment,menu:"profile/"+imageName};
+                      var meal = {user_id:request.user_id,item:item,price:price,amount:amount,comment:comment};
                       // console.log(meal);
                       order.meals.push(meal);
                       // console.log(order);
@@ -252,20 +258,16 @@ router.post("/:id/meal",postMiddleware,function(request,response){
                           }else{
                               response.json({status:true,order:order});
                           }
-                      })
+                      });
                   }else{
                       response.json({status:false,errors:["You are not allowed to add a meal in that order"]});
                   }
                 }
-                else {
-                  response.json({loggedIn:false,errors:["Can not upload the image"]});
-                }
-              });
-            }else{
+            else{
                 response.json({status:false,errors:["Invalid order id"]});
             }
         }
-    })
+    });
 });
 
 // joinded member
@@ -286,13 +288,14 @@ router.put("/:order_id",function(request,response){
                         response.json({status:false,error:err});
                       }
                     });
-                }else{
-                    response.json({status:false,errors:[" you are not invited to that order"]});
-                }
             }else{
-                response.json({status:false,errors:["Invalid order id"]});
+                response.json({status:false,errors:["Invalid user id "]});
             }
-        }
+          }
+          else {
+            response.json({status:false,errors:["Invalid order id "]});
+          }
+      }
     });
   }else{
       response.json({status:false,error:"order id not found"});
