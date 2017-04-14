@@ -111,6 +111,7 @@ router.post("/",postMiddleware,function(request,response){
           //prepare the order to save
           //upload image
           var buf = new Buffer(data, 'base64');
+          console.log(data);
           var imageName = "pic" + Math.floor(Math.random()*(100000)) + "_" + (+new Date())+'.'+e;
           fs.writeFile('public/menus/'+imageName, buf, function(err){
             if(!err)
