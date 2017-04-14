@@ -65,7 +65,7 @@ router.post("/",postMiddleware,function(request,response){
   // var menu = validator.escape(request.body.menu);
   var invited_id = validator.escape(request.body.invited_id || '');
   var invited_type = validator.escape(request.body.invited_type || '');
-  var base64image = request.body.profile || '';
+  var base64image = request.body.menu || '';
   // var invited_id = "58e6cfa0b85cdd420ad62434";
   // var invited_type = "user";
   //******************validation*******************************
@@ -84,7 +84,9 @@ router.post("/",postMiddleware,function(request,response){
   }
 
   //4.validate image
+  var data = "iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAAKElEQVQ4jWNgYGD4Twzu6FhFFGYYNXDUwGFpIAk2E4dHDRw1cDgaCAASFOffhEIO3gAAAABJRU5ErkJggg";
   var matches = base64image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/) || [];
+  console.log(matches.length);
   if(matches.length != 3){
     errors.push("Invalid Image");
   }else{
@@ -96,7 +98,7 @@ router.post("/",postMiddleware,function(request,response){
     if(e !== "png" && e !== "jpg" && e !== "jpeg"){
       errors.push("Invalid Image extension");
     }
-    var data = matches[2];
+    data = matches[2];
   }
 
   //***********************************************************
@@ -160,7 +162,7 @@ router.post("/",postMiddleware,function(request,response){
               }
             }
             else {
-                response.json({status:false,errors:[" you are not invited to that order"]});
+                response.json({status:false,errors:["Can not upload this image"]});
             }
           });
       }

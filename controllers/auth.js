@@ -46,7 +46,7 @@ router.post("/login",postMiddleware,function(request,response){
     response.json({loggedIn:false});
   }else{
     //check in DB
-    mongoose.model("users").findOne({email:email},{password:true},function(err,user){
+    mongoose.model("users").findOne({email:email},{},function(err,user){
       if(err || !user || user.password == 'undefined'){
         response.json({loggedIn:false});
     // check bcrypt password ...
@@ -55,7 +55,7 @@ router.post("/login",postMiddleware,function(request,response){
         var user_token = {_id:user._id};
         jwt.sign(user_token,APP_SECRET,{algorithm:"HS256"},function(err,token){
             if(!err){
-                response.json({loggedIn:true,data:{name:user.name,id:user._id},access_token:token});
+                response.json({loggedIn:true,data:{name:user.name,id:user._id,profile:user.avatar},access_token:token});
             }else{
                 response.json({loggedIn:false});
             }
