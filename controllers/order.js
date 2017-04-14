@@ -5,6 +5,7 @@ var bodyParser = require("body-parser");
 var postMiddleware = bodyParser.urlencoded({extended:true});
 var validator = require("validator");
 var mongoose = require("mongoose");
+var fs = require('fs');
 
 //GET owned and invited orders ...
 router.get("/",function(request,response){
@@ -192,6 +193,7 @@ router.post("/:id/meal",postMiddleware,function(request,response){
     var price = validator.escape(request.body.price);
     var amount = validator.escape(request.body.amount) || "1";
     var comment = validator.escape(request.body.comment);
+    var base64image = request.body.profile || '';
     //******************validation*******************************
     var errors = [];
     //1.validate item name
@@ -209,33 +211,90 @@ router.post("/:id/meal",postMiddleware,function(request,response){
     if((amount * 1) <= 0 || !Number.isInteger(amount * 1)){
         errors.push("Invalid amount");
     }
+    //4.validate image
+    var matches = base64image.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/) || [];
+    if(matches.length != 3){
+      errors.push("Invalid Image");
+    }else{
+      var ext = matches[1];
+      var e = ext.split('/')[1];
+      console.log('EXT: ' + e)
+      console.log(e !== "png" || e !== "jpg")
+
+      if(e !== "png" && e !== "jpg" && e !== "jpeg"){
+        errors.push("Invalid Image extension");
+      }
+      var data = matches[2];
+    }
     if(errors.length > 0) response.json({status:false,errors:errors});
     //***********************************************************
-    mongoose.model("orders").findById(request.params.id).populate('invited_group').exec(function(err,order){
+    mongoose.model("orders").findById(request.params.id).exec(function(err,order){
         if(err){
             response.json({status:false,errors:["System Error! Come back later"]});
         }else{
             if(order){
-                if(String(order.owner_id) === request.user_id || String(order.invited_user) === request.user_id || (typeof order.invited_group !== 'undefined' && (order.invited_group.members.indexOf(request.user_id) > -1))){
-                    var meal = {user_id:request.user_id,item:item,price:price,amount:amount,comment:comment};
-                    // console.log(meal);
-                    order.meals.push(meal);
-                    // console.log(order);
-                    order.save(function(err,order){
-                        if(err){
-                            response.json({status:false,errors:["System error"]});
-                        }else{
-                            response.json({status:true,order:order});
-                        }
-                    })
-                }else{
-                    response.json({status:false,errors:["You are not allowed to add a meal in that order"]});
+              //upload image
+              var buf = new Buffer(data, 'base64');
+              var imageName = "pic" + Math.floor(Math.random()*(100000)) + "_" + (+new Date())+'.'+e;
+              fs.writeFile('public/profile/'+imageName, buf, function(err){
+                if(!err)
+                {
+                  if(order.owner_id === request.user_id || (typeof order.joined_members !== 'undefined' && (order.joined_members.indexOf(request.user_id) > -1))){
+                      var meal = {user_id:request.user_id,item:item,price:price,amount:amount,comment:comment,menu:"profile/"+imageName};
+                      // console.log(meal);
+                      order.meals.push(meal);
+                      // console.log(order);
+                      order.save(function(err,order){
+                          if(err){
+                              response.json({status:false,errors:["System error"]});
+                          }else{
+                              response.json({status:true,order:order});
+                          }
+                      })
+                  }else{
+                      response.json({status:false,errors:["You are not allowed to add a meal in that order"]});
+                  }
                 }
+                else {
+                  response.json({loggedIn:false,errors:["Can not upload the image"]});
+                }
+              });
             }else{
                 response.json({status:false,errors:["Invalid order id"]});
             }
         }
     })
+});
+
+// joinded member
+router.put("/:order_id",function(request,response){
+  if(request.params.order_id)
+  {
+    mongoose.model("orders").findById(request.params.order_id).populate('invited_group').exec(function(err,order){
+        if(err){
+            response.json({status:false,error:"System Error! Come back later"});
+        }else{
+            if(order){
+                if(order.invited_group !== 'undefined' && (order.invited_group.members.indexOf(request.user_id) > -1)){
+                  mongoose.model("orders").update({_id:request.params.order_id},{$push:{joined_members:request.user_id}},function(err){
+                      if(!err){
+                        response.json({status:true});
+                      }
+                      else {
+                        response.json({status:false,error:err});
+                      }
+                    });
+                }else{
+                    response.json({status:false,errors:[" you are not invited to that order"]});
+                }
+            }else{
+                response.json({status:false,errors:["Invalid order id"]});
+            }
+        }
+    });
+  }else{
+      response.json({status:false,error:"order id not found"});
+  }
 });
 
 //DELETE an owned meal from an owned or invited order ...
